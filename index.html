@@ -7,91 +7,163 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
+        /* LAYOUT DARK MODE (MATA PATIH v4.5) */
         body { font-family: 'Segoe UI', sans-serif; background-color: #1e1e1e; color: #eee; padding: 20px; text-align: center; }
         .container { max-width: 400px; margin: 0 auto; }
         .btn { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.2s; }
-        .btn-scan { background: linear-gradient(135deg, #f1c40f, #f39c12); color: #1e1e1e; }
-        .btn-submit { background: linear-gradient(135deg, #2ecc71, #27ae60); color: white; display: none; }
-        .btn-cancel { background: #e74c3c; color: white; margin-top: 5px;}
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #444; background: #333; color: white; box-sizing: border-box; }
+        
+        .btn-scan { background: linear-gradient(135deg, #f1c40f, #f39c12); color: #1e1e1e; } /* Tombol Kuning */
+        .btn-submit { background: linear-gradient(135deg, #2ecc71, #27ae60); color: white; display: none; } /* Tombol Hijau */
+        .btn-cancel { background: #e74c3c; color: white; margin-top: 5px; } /* Tombol Merah */
+        
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #444; background: #333; color: white; box-sizing: border-box; font-size: 15px;}
         label { display: block; text-align: left; margin-top: 10px; font-size: 14px; color: #aaa; }
-        #reader { width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 20px; background: #000; }
+        
+        #reader { width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 20px; background: #000; min-height: 250px; position: relative; border: 2px solid #333; }
         .hidden { display: none; }
+        
+        /* Loading Overlay */
+        .loading { color: #f1c40f; font-size: 12px; margin-top: 10px;}
     </style>
 </head>
 <body>
     <div class="container">
-        <h3>👁️ MATA PATIH v4.5</h3>
+        <h3 style="margin-bottom: 5px; color: #f1c40f;">👁️ MATA PATIH v4.5</h3>
+        <div style="font-size: 12px; color: #888; margin-bottom: 20px;">Secure Infrastructure Scanner</div>
         
-        <div id="reader"></div>
+        <div id="reader">
+            <div style="padding-top: 100px; color: #555;">Kamera belum aktif</div>
+        </div>
         
         <button id="startScan" class="btn btn-scan">📷 BUKA SCANNER</button>
         
         <div id="resultInfo" class="hidden">
-            <label>Serial Number (SN):</label>
-            <input type="text" id="snInput" placeholder="Hasil Scan..." readonly>
+            <label>Serial Number (SN/SKU):</label>
+            <input type="text" id="snInput" placeholder="Hasil Scan..." readonly style="font-weight:bold; text-align:center; color: #f1c40f; font-size: 1.2em;">
             
-            <label>Jenis Perangkat:</label>
-            <select id="jenisInput">
-                <option value="ONT">ONT (Modem)</option>
-                <option value="ROUTER">Router WiFi</option>
-                <option value="STB">STB TV</option>
-                <option value="ACCESS_POINT">Access Point</option>
+            <label>Tindakan (Action):</label>
+            <select id="actionInput">
+                <option value="SCAN">🔍 Cek Status (Scan Only)</option>
+                <option value="IN">📥 Barang Masuk (IN)</option>
+                <option value="OUT">📤 Barang Keluar/Pasang (OUT)</option>
             </select>
+
+            <label>Detail Perangkat:</label>
+            <div style="display: flex; gap: 5px;">
+                <select id="jenisInput" style="flex: 1;">
+                    <option value="ONT">Modem ONT</option>
+                    <option value="ROUTER">Router WiFi</option>
+                    <option value="STB">STB TV</option>
+                    <option value="CABLE">Kabel Dropcore</option>
+                    <option value="ACCESS_POINT">Access Point</option>
+                </select>
+                <select id="merkInput" style="flex: 1;">
+                    <option value="ZTE">ZTE</option>
+                    <option value="HUAWEI">Huawei</option>
+                    <option value="NOKIA">Nokia</option>
+                    <option value="FIBERHOME">Fiberhome</option>
+                </select>
+            </div>
     
-            <label>Merk:</label>
-            <select id="merkInput">
-                <option value="ZTE">ZTE</option>
-                <option value="HUAWEI">Huawei</option>
-                <option value="NOKIA">Nokia</option>
-                <option value="FIBERHOME">Fiberhome</option>
-            </select>
-    
-            <button id="sendData" class="btn btn-submit">📤 KIRIM KE GUDANG</button>
-            <button onclick="location.reload()" class="btn btn-cancel">❌ Ulangi</button>
+            <button id="sendData" class="btn btn-submit">🚀 KIRIM DATA</button>
+            <button onclick="location.reload()" class="btn btn-cancel">❌ Reset / Ulangi</button>
+            <div id="statusMsg" class="loading" style="display:none;">Sedang mengambil Lokasi GPS...</div>
         </div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.expand(); 
+        tg.expand(); // Fullscreen Telegram
 
-        const html5QrCode = new Html5Qrcode("reader");
+        let html5QrCode;
         const startBtn = document.getElementById('startScan');
         const resultInfo = document.getElementById('resultInfo');
         const snInput = document.getElementById('snInput');
         const sendBtn = document.getElementById('sendData');
+        const statusMsg = document.getElementById('statusMsg');
 
+        // --- 1. LOGIKA BUKA KAMERA (GITHUB SAFE) ---
         startBtn.addEventListener('click', () => {
-            startBtn.style.display = 'none';
-            html5QrCode.start(
-                { facingMode: "environment" }, 
-                { fps: 10, qrbox: { width: 250, height: 250 } },
-                (decodedText) => {
-                    html5QrCode.stop();
-                    document.getElementById('reader').style.display = 'none';
-                    resultInfo.style.display = 'block';
-                    snInput.value = decodedText;
-                    sendBtn.style.display = 'block';
-                    tg.HapticFeedback.notificationOccurred('success');
-                },
-                (err) => {}
-            ).catch(err => {
-                alert("Kamera tidak aktif. Pastikan izin browser diizinkan.");
-                startBtn.style.display = 'block';
+            startBtn.innerText = "⏳ Menghubungkan Kamera...";
+            startBtn.disabled = true;
+
+            html5QrCode = new Html5Qrcode("reader");
+
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+            
+            // Perintah nyalakan kamera
+            html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
+                // JIKA BERHASIL SCAN
+                playSound();
+                stopCamera();
+                
+                // Isi Form
+                snInput.value = decodedText;
+                
+                // Tampilkan Form
+                document.getElementById('reader').style.display = 'none';
+                startBtn.style.display = 'none';
+                resultInfo.style.display = 'block';
+                sendBtn.style.display = 'block';
+                
+            }).catch(err => {
+                // JIKA GAGAL (Biasanya Izin Ditolak)
+                alert("❌ Gagal Akses Kamera: " + err);
+                startBtn.innerText = "📷 BUKA SCANNER";
+                startBtn.disabled = false;
             });
         });
 
+        function stopCamera() {
+            if(html5QrCode) html5QrCode.stop().then(() => html5QrCode.clear());
+        }
+
+        function playSound() {
+            // Getaran Haptic HP
+            tg.HapticFeedback.notificationOccurred('success');
+        }
+
+        // --- 2. LOGIKA KIRIM DATA (GPS + N8N FORMAT) ---
         sendBtn.addEventListener('click', () => {
             if(!snInput.value) return;
-            const data = {
-                action: "SCAN_MASUK_MINIAPP",
-                sn: snInput.value,
-                jenis: document.getElementById('jenisInput').value,
-                merk: document.getElementById('merkInput').value
-            };
-            tg.sendData(JSON.stringify(data)); 
-            tg.close();
+
+            // UI Loading
+            sendBtn.disabled = true;
+            sendBtn.innerText = "📍 Mencari GPS...";
+            statusMsg.style.display = 'block';
+            tg.MainButton.showProgress();
+            
+            // Ambil GPS (Wajib untuk Peta Fiber Doctor)
+            navigator.geolocation.getCurrentPosition((pos) => {
+                
+                // Persiapan Data untuk n8n
+                const jenis = document.getElementById('jenisInput').value;
+                const merk = document.getElementById('merkInput').value;
+                
+                const payload = {
+                    action: document.getElementById('actionInput').value, // IN, OUT, SCAN
+                    sku: snInput.value,
+                    qty: 1,
+                    lat: pos.coords.latitude,
+                    lng: pos.coords.longitude,
+                    // Gabungkan Merk & Jenis jadi satu info tambahan
+                    meta: JSON.stringify({ type: jenis, brand: merk }) 
+                };
+
+                // Kirim ke Telegram (n8n akan menangkap ini)
+                tg.sendData(JSON.stringify(payload)); 
+                tg.close();
+
+            }, (err) => {
+                tg.MainButton.hideProgress();
+                sendBtn.disabled = false;
+                sendBtn.innerText = "🚀 KIRIM DATA";
+                alert("⚠️ Error GPS: Pastikan GPS HP Aktif!\n" + err.message);
+            }, {
+                enableHighAccuracy: true,
+                timeout: 5000,
+                maximumAge: 0
+            });
         });
     </script>
 </body>
