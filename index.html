@@ -1,65 +1,180 @@
-<script>
-  const tg = window.Telegram?.WebApp;
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+  <title>P.A.T.I.H</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;margin:0;background:#0b1220;color:#e7eefc}
+    .wrap{max-width:720px;margin:0 auto;padding:16px}
+    .card{background:#121a2b;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;margin:10px 0}
+    label{display:block;font-size:12px;opacity:.85;margin:10px 0 6px}
+    input,select,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:#0e1626;color:#e7eefc}
+    textarea{min-height:80px}
+    .row{display:flex;gap:10px}
+    .row > div{flex:1}
+    button{width:100%;padding:12px;border-radius:12px;border:0;background:#3b82f6;color:white;font-weight:700;margin-top:12px}
+    button.secondary{background:#23314d}
+    .hint{font-size:12px;opacity:.8;line-height:1.4}
+    .ok{color:#7CFFB2}
+    .err{color:#FF7C7C}
+    .small{font-size:11px;opacity:.75}
+    code{background:rgba(255,255,255,.08);padding:2px 6px;border-radius:8px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h2 style="margin:0 0 8px">P.A.T.I.H — Mutasi Stok</h2>
+      <div class="hint">
+        Isi form, lalu tekan <b>Kirim</b>. Di Telegram, data akan dikirim via <code>tg.sendData()</code>.
+        Jika halaman dibuka di browser biasa, fallback akan POST ke webhook (untuk testing).
+      </div>
+    </div>
 
-  function isTelegramWebApp() {
-    return tg && typeof tg.sendData === "function" && tg.initData && tg.initData.length > 0;
-  }
+    <div class="card">
+      <label>Tipe Transaksi</label>
+      <select id="act">
+        <option value="Masuk Gudang">Masuk Gudang</option>
+        <option value="Keluar Gudang">Keluar Gudang</option>
+        <option value="Retur">Retur</option>
+      </select>
 
-  async function sendToWebhook(payload) {
-    // GANTI dengan Production Webhook URL TheBrain kamu (bukan webhook-test)
-    const WEBHOOK_URL = "https://n8ring.gatrapurna.my.id/webhook/patih-v6/brain";
+      <div class="row">
+        <div>
+          <label>SKU</label>
+          <input id="sku" placeholder="contoh: KABEL-1KM" />
+        </div>
+        <div>
+          <label>Jumlah</label>
+          <input id="qty" type="number" min="0" step="1" placeholder="contoh: 2" />
+        </div>
+      </div>
 
-    const res = await fetch(WEBHOOK_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...payload, mode: "LOGISTIC" })
-    });
+      <label>Keterangan (opsional)</label>
+      <textarea id="ket" placeholder="misal: ODP A1 / lokasi / catatan"></textarea>
 
-    // optional: lihat respon
-    const data = await res.json().catch(() => ({}));
-    alert("✅ Terkirim via Webhook\n" + JSON.stringify(data, null, 2));
-  }
+      <div class="row">
+        <div>
+          <label>Latitude</label>
+          <input id="lat" inputmode="decimal" placeholder="-6.2" />
+        </div>
+        <div>
+          <label>Longitude</label>
+          <input id="lng" inputmode="decimal" placeholder="106.8" />
+        </div>
+      </div>
 
-  function sendData() {
-    const sku = document.getElementById('skuInput').value;
-    if(!sku) {
-      (tg?.showAlert ? tg.showAlert("⚠️ SKU Kosong! Scan dulu atau ketik manual.") : alert("⚠️ SKU Kosong!"));
-      return;
+      <button class="secondary" id="btnLoc">Ambil Lokasi (GPS)</button>
+      <button id="btnSend">Kirim</button>
+
+      <div id="status" class="small" style="margin-top:10px"></div>
+    </div>
+
+    <div class="card">
+      <div class="hint">
+        <b>Tips:</b> setelah transaksi, kalau butuh foto susulan cukup kirim foto ke bot.
+        Sistem akan menempelkan foto ke transaksi terakhir yang statusnya <code>WAIT_PHOTO</code>.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const tg = window.Telegram?.WebApp;
+
+    // webhook fallback (untuk testing di browser non-Telegram)
+    const WEBHOOK_FALLBACK = "https://n8ring.gatrapurna.my.id/webhook/patih-v7/brain";
+
+    function setStatus(msg, ok=true){
+      const el = document.getElementById("status");
+      el.innerHTML = ok ? `<span class="ok">✅ ${msg}</span>` : `<span class="err">❌ ${msg}</span>`;
     }
 
-    const btn = document.getElementById('sendBtn');
-    btn.disabled = true;
-    btn.innerText = "📍 Mengambil Lokasi...";
-    tg?.MainButton?.showProgress?.();
+    function numOrNull(v){
+      if(v === null || v === undefined) return null;
+      const s = String(v).trim();
+      if(!s) return null;
+      const n = Number(s);
+      return Number.isFinite(n) ? n : null;
+    }
 
-    navigator.geolocation.getCurrentPosition(async (pos) => {
+    async function getLocation(){
+      return new Promise((resolve, reject) => {
+        if(!navigator.geolocation) return reject(new Error("Geolocation tidak tersedia"));
+        navigator.geolocation.getCurrentPosition(
+          (pos) => resolve({lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy_m: pos.coords.accuracy}),
+          (err) => reject(err),
+          {enableHighAccuracy:true, timeout:12000, maximumAge:0}
+        );
+      });
+    }
+
+    document.getElementById("btnLoc").addEventListener("click", async () => {
+      try{
+        setStatus("Mengambil lokasi...", true);
+        const loc = await getLocation();
+        document.getElementById("lat").value = loc.lat;
+        document.getElementById("lng").value = loc.lng;
+        setStatus(`Lokasi didapat (akurasi ±${Math.round(loc.accuracy_m)}m)`, true);
+      }catch(e){
+        setStatus(e.message || "Gagal ambil lokasi", false);
+      }
+    });
+
+    document.getElementById("btnSend").addEventListener("click", async () => {
+      const act = document.getElementById("act").value;
+      const sku = document.getElementById("sku").value.trim();
+      const qty = Number(document.getElementById("qty").value || "0");
+      const ket = document.getElementById("ket").value.trim();
+      const lat = numOrNull(document.getElementById("lat").value);
+      const lng = numOrNull(document.getElementById("lng").value);
+
+      if(!sku){ setStatus("SKU wajib diisi", false); return; }
+      if(!Number.isFinite(qty) || qty <= 0){ setStatus("Jumlah harus > 0", false); return; }
+
       const payload = {
-        action: document.getElementById('actionInput').value, // IN/OUT/INSTALL/RETUR/SCAN
-        sku: sku,
-        qty: parseInt(document.getElementById('qtyInput').value),
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude,
-        meta: { device: "Mobile", source: "GITHUB_V6" }
+        type: "MUTASI_STOK",
+        action: act,
+        sku,
+        qty,
+        keterangan: ket || null,
+        lat,
+        lng,
+        ts_client: new Date().toISOString()
       };
 
-      if (isTelegramWebApp()) {
-        tg.HapticFeedback?.notificationOccurred?.('success');
-        tg.sendData(JSON.stringify(payload));
-        tg.close();
-      } else {
-        // fallback mode (browser)
-        tg?.MainButton?.hideProgress?.();
-        btn.disabled = false;
-        btn.innerText = "🚀 KIRIM DATA";
-        await sendToWebhook(payload);
+      try{
+        // Telegram WebApp path (preferred)
+        if(tg && typeof tg.sendData === "function"){
+          tg.sendData(JSON.stringify(payload));
+          setStatus("Data terkirim ke bot. Silakan kembali ke chat Telegram.", true);
+          if(tg.close) tg.close();
+          return;
+        }
+
+        // Fallback: direct webhook (for browser testing)
+        setStatus("Mode browser: mengirim ke webhook...", true);
+        const res = await fetch(WEBHOOK_FALLBACK, {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({mode:"WEBAPP", ...payload})
+        });
+        const data = await res.json().catch(()=> ({}));
+        if(res.ok && (data.ok || data.status === "ok")){
+          setStatus(data.reply_text || "OK", true);
+        }else{
+          setStatus(data.message || "Webhook error", false);
+        }
+      }catch(e){
+        setStatus(e.message || "Gagal kirim", false);
       }
+    });
 
-    }, (err) => {
-      tg?.MainButton?.hideProgress?.();
-      btn.disabled = false;
-      btn.innerText = "🚀 KIRIM DATA";
-      alert("⚠️ Wajib GPS! Aktifkan lokasi HP Anda.");
-    }, { enableHighAccuracy: true });
-  }
-</script>
-
+    // Telegram UI polish
+    if(tg){
+      tg.ready();
+      tg.expand();
+    }
+  </script>
+</body>
+</html>
