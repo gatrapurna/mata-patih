@@ -3,66 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mata Patih - Scanner</title>
+    <title>Mata Patih v6.0</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
-        /* GAYA TAMPILAN (MATA PATIH DARK MODE) */
-        body { 
-            font-family: 'Segoe UI', sans-serif; 
-            background-color: #1e1e1e; 
-            color: #eee; 
-            padding: 15px; 
-            text-align: center; 
-            margin: 0;
-        }
+        /* GAYA TAMPILAN (Sobat Logistik Dark Mode) */
+        body { font-family: 'Segoe UI', sans-serif; background-color: #1e1e1e; color: #eee; padding: 15px; text-align: center; margin: 0; }
         .container { max-width: 400px; margin: 0 auto; }
         
-        #reader { 
-            width: 100%; 
-            border-radius: 12px; 
-            overflow: hidden; 
-            margin-bottom: 15px; 
-            background: #000; 
-            min-height: 250px; 
-            border: 2px solid #333;
-            position: relative;
-        }
-
+        #reader { width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 15px; background: #000; min-height: 250px; border: 2px solid #333; position: relative; }
+        
         .form-group { margin-bottom: 10px; text-align: left; }
         label { font-size: 12px; color: #aaa; margin-left: 5px; margin-bottom: 2px; display: block;}
+        input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #333; color: white; box-sizing: border-box; font-size: 16px; outline: none; }
         
-        input, select { 
-            width: 100%; 
-            padding: 12px; 
-            border-radius: 8px; 
-            border: 1px solid #444; 
-            background: #333; 
-            color: white; 
-            box-sizing: border-box; 
-            font-size: 16px;
-            outline: none;
-        }
+        .row { display: flex; gap: 10px; } .col-8 { flex: 2; } .col-4 { flex: 1; }
         
-        .row { display: flex; gap: 10px; }
-        .col-8 { flex: 2; }
-        .col-4 { flex: 1; }
-
-        .btn { 
-            width: 100%; 
-            padding: 14px; 
-            margin-top: 15px; 
-            border: none; 
-            border-radius: 10px; 
-            font-weight: bold; 
-            font-size: 16px; 
-            cursor: pointer; 
-            transition: 0.2s; 
-            text-transform: uppercase;
-        }
-        
-        .btn-scan { background-color: #3390ec; color: white; }
-        .btn-stop { background-color: #e74c3c; color: white; display: none; }
+        .btn { width: 100%; padding: 14px; margin-top: 15px; border: none; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
+        .btn-scan { background-color: #3390ec; color: white; } 
+        .btn-stop { background-color: #e74c3c; color: white; display: none; } 
         .btn-submit { background: linear-gradient(135deg, #2ecc71, #27ae60); color: white; }
         
         #skuInput { color: #f1c40f; font-weight: bold; text-align: center; letter-spacing: 1px; }
@@ -71,7 +30,7 @@
 </head>
 <body>
     <div class="container">
-        <h3 style="margin: 0 0 15px 0; color: #f1c40f;">👁️ MATA PATIH v5.1</h3>
+        <h3 style="margin: 0 0 15px 0; color: #f1c40f;">👁️ MATA PATIH v6.0</h3>
 
         <div id="reader"></div>
         <div id="statusInfo">Siap memindai...</div>
@@ -123,16 +82,20 @@
 
             html5QrCode = new Html5Qrcode("reader");
 
+            // Menggunakan konfigurasi kamera belakang yang lebih agresif
             html5QrCode.start(
                 { facingMode: "environment" }, 
                 { fps: 10, qrbox: { width: 250, height: 250 } },
                 (decodedText) => {
-                    playSound();
+                    // SUKSES SCAN
+                    tg.HapticFeedback.notificationOccurred('success');
                     document.getElementById('skuInput').value = decodedText;
                     document.getElementById('statusInfo').innerText = "✅ Sukses: " + decodedText;
                     stopCamera();
                 },
-                (errorMessage) => {}
+                (errorMessage) => {
+                    // Scanning...
+                }
             ).catch(err => {
                 alert("Gagal akses kamera: " + err);
                 stopCamera();
@@ -148,15 +111,10 @@
             document.getElementById('statusInfo').innerText = "Siap memindai...";
         }
 
-        function playSound() { tg.HapticFeedback.notificationOccurred('success'); }
-
         function sendData() {
             const sku = document.getElementById('skuInput').value;
-            const action = document.getElementById('actionInput').value;
-            const qty = document.getElementById('qtyInput').value;
-
             if(!sku) {
-                tg.showAlert("⚠️ SKU Kosong! Scan dulu bos.");
+                tg.showAlert("⚠️ SKU Kosong! Scan dulu atau ketik manual.");
                 return;
             }
 
@@ -165,15 +123,18 @@
             btn.innerText = "📍 Mengambil Lokasi...";
             tg.MainButton.showProgress();
 
+            // Ambil GPS (Wajib untuk Sistem V6)
             navigator.geolocation.getCurrentPosition((pos) => {
                 const payload = {
-                    action: action,
+                    action: document.getElementById('actionInput').value,
                     sku: sku,
-                    qty: parseInt(qty),
+                    qty: parseInt(document.getElementById('qtyInput').value),
                     lat: pos.coords.latitude,
                     lng: pos.coords.longitude,
-                    meta: { device: "Mobile", version: "v5.1" } 
+                    meta: { device: "Mobile", source: "GITHUB_V6" } 
                 };
+                
+                // Kirim data balik ke Telegram -> Masuk ke n8n TheFace
                 tg.sendData(JSON.stringify(payload));
                 tg.close();
             }, (err) => {
