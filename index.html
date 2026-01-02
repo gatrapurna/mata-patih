@@ -7,164 +7,203 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
-        /* LAYOUT DARK MODE (MATA PATIH v4.5) */
-        body { font-family: 'Segoe UI', sans-serif; background-color: #1e1e1e; color: #eee; padding: 20px; text-align: center; }
+        /* GAYA TAMPILAN (DARK MODE v4.5) */
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background-color: #1e1e1e; 
+            color: #eee; 
+            padding: 15px; 
+            text-align: center; 
+            margin: 0;
+        }
         .container { max-width: 400px; margin: 0 auto; }
-        .btn { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.2s; }
         
-        .btn-scan { background: linear-gradient(135deg, #f1c40f, #f39c12); color: #1e1e1e; } /* Tombol Kuning */
-        .btn-submit { background: linear-gradient(135deg, #2ecc71, #27ae60); color: white; display: none; } /* Tombol Hijau */
-        .btn-cancel { background: #e74c3c; color: white; margin-top: 5px; } /* Tombol Merah */
+        /* AREA KAMERA */
+        #reader { 
+            width: 100%; 
+            border-radius: 12px; 
+            overflow: hidden; 
+            margin-bottom: 15px; 
+            background: #000; 
+            min-height: 250px; 
+            border: 2px solid #333;
+            position: relative;
+        }
+
+        /* INPUT & FORM */
+        .form-group { margin-bottom: 10px; text-align: left; }
+        label { font-size: 12px; color: #aaa; margin-left: 5px; margin-bottom: 2px; display: block;}
         
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #444; background: #333; color: white; box-sizing: border-box; font-size: 15px;}
-        label { display: block; text-align: left; margin-top: 10px; font-size: 14px; color: #aaa; }
+        input, select { 
+            width: 100%; 
+            padding: 12px; 
+            border-radius: 8px; 
+            border: 1px solid #444; 
+            background: #333; 
+            color: white; 
+            box-sizing: border-box; 
+            font-size: 16px;
+            outline: none;
+        }
         
-        #reader { width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 20px; background: #000; min-height: 250px; position: relative; border: 2px solid #333; }
-        .hidden { display: none; }
+        /* Baris Input Gabungan (Action & Qty) */
+        .row { display: flex; gap: 10px; }
+        .col-8 { flex: 2; }
+        .col-4 { flex: 1; }
+
+        /* TOMBOL */
+        .btn { 
+            width: 100%; 
+            padding: 14px; 
+            margin-top: 15px; 
+            border: none; 
+            border-radius: 10px; 
+            font-weight: bold; 
+            font-size: 16px; 
+            cursor: pointer; 
+            transition: 0.2s; 
+            text-transform: uppercase;
+        }
         
-        /* Loading Overlay */
-        .loading { color: #f1c40f; font-size: 12px; margin-top: 10px;}
+        /* Tombol Start (Biru Telegram) */
+        .btn-scan { background-color: #3390ec; color: white; }
+        /* Tombol Stop (Merah) */
+        .btn-stop { background-color: #e74c3c; color: white; display: none; }
+        /* Tombol Kirim (Hijau) */
+        .btn-submit { background: linear-gradient(135deg, #2ecc71, #27ae60); color: white; }
+        
+        /* Input Hasil Scan (Kuning Emas) */
+        #skuInput { color: #f1c40f; font-weight: bold; text-align: center; letter-spacing: 1px; }
+
+        /* Loading Text */
+        #statusInfo { font-size: 12px; color: #888; margin-bottom: 10px; min-height: 18px;}
     </style>
 </head>
 <body>
     <div class="container">
-        <h3 style="margin-bottom: 5px; color: #f1c40f;">👁️ MATA PATIH v4.5</h3>
-        <div style="font-size: 12px; color: #888; margin-bottom: 20px;">Secure Infrastructure Scanner</div>
-        
-        <div id="reader">
-            <div style="padding-top: 100px; color: #555;">Kamera belum aktif</div>
-        </div>
-        
-        <button id="startScan" class="btn btn-scan">📷 BUKA SCANNER</button>
-        
-        <div id="resultInfo" class="hidden">
-            <label>Serial Number (SN/SKU):</label>
-            <input type="text" id="snInput" placeholder="Hasil Scan..." readonly style="font-weight:bold; text-align:center; color: #f1c40f; font-size: 1.2em;">
-            
-            <label>Tindakan (Action):</label>
-            <select id="actionInput">
-                <option value="SCAN">🔍 Cek Status (Scan Only)</option>
-                <option value="IN">📥 Barang Masuk (IN)</option>
-                <option value="OUT">📤 Barang Keluar/Pasang (OUT)</option>
-            </select>
+        <h3 style="margin: 0 0 15px 0; color: #f1c40f;">👁️ MATA PATIH v5.0</h3>
 
-            <label>Detail Perangkat:</label>
-            <div style="display: flex; gap: 5px;">
-                <select id="jenisInput" style="flex: 1;">
-                    <option value="ONT">Modem ONT</option>
-                    <option value="ROUTER">Router WiFi</option>
-                    <option value="STB">STB TV</option>
-                    <option value="CABLE">Kabel Dropcore</option>
-                    <option value="ACCESS_POINT">Access Point</option>
-                </select>
-                <select id="merkInput" style="flex: 1;">
-                    <option value="ZTE">ZTE</option>
-                    <option value="HUAWEI">Huawei</option>
-                    <option value="NOKIA">Nokia</option>
-                    <option value="FIBERHOME">Fiberhome</option>
-                </select>
-            </div>
-    
-            <button id="sendData" class="btn btn-submit">🚀 KIRIM DATA</button>
-            <button onclick="location.reload()" class="btn btn-cancel">❌ Reset / Ulangi</button>
-            <div id="statusMsg" class="loading" style="display:none;">Sedang mengambil Lokasi GPS...</div>
+        <div id="reader"></div>
+        <div id="statusInfo">Siap memindai...</div>
+
+        <button id="startScan" class="btn btn-scan" onclick="startCamera()">📷 NYALAKAN KAMERA</button>
+        <button id="stopScan" class="btn btn-stop" onclick="stopCamera()">⏹ STOP KAMERA</button>
+
+        <hr style="border: 0; border-top: 1px solid #333; margin: 20px 0;">
+
+        <div class="form-group">
+            <label>Serial Number / SKU:</label>
+            <input type="text" id="skuInput" placeholder="Scan atau Ketik Manual..." >
         </div>
+
+        <div class="row">
+            <div class="col-8">
+                <div class="form-group">
+                    <label>Tindakan:</label>
+                    <select id="actionInput">
+                        <option value="SCAN">🔍 Cek Info</option>
+                        <option value="IN">📥 Masuk Gudang</option>
+                        <option value="OUT">📤 Pasang / Keluar</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="form-group">
+                    <label>Jumlah:</label>
+                    <input type="number" id="qtyInput" value="1" min="1">
+                </div>
+            </div>
+        </div>
+
+        <button id="sendBtn" class="btn btn-submit" onclick="sendData()">🚀 KIRIM DATA</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.expand(); // Fullscreen Telegram
+        tg.expand(); 
 
         let html5QrCode;
-        const startBtn = document.getElementById('startScan');
-        const resultInfo = document.getElementById('resultInfo');
-        const snInput = document.getElementById('snInput');
-        const sendBtn = document.getElementById('sendData');
-        const statusMsg = document.getElementById('statusMsg');
+        let isScanning = false;
 
-        // --- 1. LOGIKA BUKA KAMERA (GITHUB SAFE) ---
-        startBtn.addEventListener('click', () => {
-            startBtn.innerText = "⏳ Menghubungkan Kamera...";
-            startBtn.disabled = true;
+        // --- FUNGSI KAMERA ---
+        function startCamera() {
+            document.getElementById('startScan').style.display = 'none';
+            document.getElementById('stopScan').style.display = 'block';
+            document.getElementById('statusInfo').innerText = "⏳ Membuka kamera...";
 
             html5QrCode = new Html5Qrcode("reader");
 
-            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-            
-            // Perintah nyalakan kamera
-            html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
-                // JIKA BERHASIL SCAN
-                playSound();
+            html5QrCode.start(
+                { facingMode: "environment" }, 
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                (decodedText) => {
+                    // SUKSES SCAN
+                    playSound();
+                    document.getElementById('skuInput').value = decodedText;
+                    document.getElementById('statusInfo').innerText = "✅ Sukses: " + decodedText;
+                    
+                    // Opsional: Stop kamera otomatis setelah scan agar hemat baterai
+                    stopCamera();
+                },
+                (errorMessage) => {
+                    // Scanning running...
+                }
+            ).catch(err => {
+                alert("Gagal akses kamera: " + err);
                 stopCamera();
-                
-                // Isi Form
-                snInput.value = decodedText;
-                
-                // Tampilkan Form
-                document.getElementById('reader').style.display = 'none';
-                startBtn.style.display = 'none';
-                resultInfo.style.display = 'block';
-                sendBtn.style.display = 'block';
-                
-            }).catch(err => {
-                // JIKA GAGAL (Biasanya Izin Ditolak)
-                alert("❌ Gagal Akses Kamera: " + err);
-                startBtn.innerText = "📷 BUKA SCANNER";
-                startBtn.disabled = false;
             });
-        });
+        }
 
         function stopCamera() {
-            if(html5QrCode) html5QrCode.stop().then(() => html5QrCode.clear());
+            if(html5QrCode) {
+                html5QrCode.stop().then(() => html5QrCode.clear());
+            }
+            document.getElementById('startScan').style.display = 'block';
+            document.getElementById('stopScan').style.display = 'none';
+            document.getElementById('statusInfo').innerText = "Siap memindai...";
         }
 
         function playSound() {
-            // Getaran Haptic HP
             tg.HapticFeedback.notificationOccurred('success');
         }
 
-        // --- 2. LOGIKA KIRIM DATA (GPS + N8N FORMAT) ---
-        sendBtn.addEventListener('click', () => {
-            if(!snInput.value) return;
+        // --- FUNGSI KIRIM DATA ---
+        function sendData() {
+            const sku = document.getElementById('skuInput').value;
+            const action = document.getElementById('actionInput').value;
+            const qty = document.getElementById('qtyInput').value;
 
-            // UI Loading
-            sendBtn.disabled = true;
-            sendBtn.innerText = "📍 Mencari GPS...";
-            statusMsg.style.display = 'block';
+            if(!sku) {
+                tg.showAlert("⚠️ SKU/SN belum diisi! Scan dulu atau ketik manual.");
+                return;
+            }
+
+            const btn = document.getElementById('sendBtn');
+            btn.disabled = true;
+            btn.innerText = "📍 Mengambil Lokasi...";
             tg.MainButton.showProgress();
-            
-            // Ambil GPS (Wajib untuk Peta Fiber Doctor)
+
+            // Ambil GPS
             navigator.geolocation.getCurrentPosition((pos) => {
-                
-                // Persiapan Data untuk n8n
-                const jenis = document.getElementById('jenisInput').value;
-                const merk = document.getElementById('merkInput').value;
-                
                 const payload = {
-                    action: document.getElementById('actionInput').value, // IN, OUT, SCAN
-                    sku: snInput.value,
-                    qty: 1,
+                    action: action,
+                    sku: sku,
+                    qty: parseInt(qty),
                     lat: pos.coords.latitude,
                     lng: pos.coords.longitude,
-                    // Gabungkan Merk & Jenis jadi satu info tambahan
-                    meta: JSON.stringify({ type: jenis, brand: merk }) 
+                    // Meta info tambahan
+                    meta: { source: "GITHUB_V5", device: "Mobile" } 
                 };
 
-                // Kirim ke Telegram (n8n akan menangkap ini)
-                tg.sendData(JSON.stringify(payload)); 
+                tg.sendData(JSON.stringify(payload));
                 tg.close();
-
             }, (err) => {
                 tg.MainButton.hideProgress();
-                sendBtn.disabled = false;
-                sendBtn.innerText = "🚀 KIRIM DATA";
-                alert("⚠️ Error GPS: Pastikan GPS HP Aktif!\n" + err.message);
-            }, {
-                enableHighAccuracy: true,
-                timeout: 5000,
-                maximumAge: 0
-            });
-        });
+                btn.disabled = false;
+                btn.innerText = "🚀 KIRIM DATA";
+                alert("⚠️ Gagal GPS: Pastikan GPS HP Aktif.\n" + err.message);
+            }, { enableHighAccuracy: true });
+        }
     </script>
 </body>
 </html>
