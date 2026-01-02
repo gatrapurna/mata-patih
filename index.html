@@ -2,179 +2,230 @@
 <html lang="id">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
-  <title>P.A.T.I.H</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>P.A.T.I.H — Mutasi Stok</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;margin:0;background:#0b1220;color:#e7eefc}
-    .wrap{max-width:720px;margin:0 auto;padding:16px}
-    .card{background:#121a2b;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;margin:10px 0}
-    label{display:block;font-size:12px;opacity:.85;margin:10px 0 6px}
-    input,select,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:#0e1626;color:#e7eefc}
-    textarea{min-height:80px}
-    .row{display:flex;gap:10px}
-    .row > div{flex:1}
-    button{width:100%;padding:12px;border-radius:12px;border:0;background:#3b82f6;color:white;font-weight:700;margin-top:12px}
-    button.secondary{background:#23314d}
-    .hint{font-size:12px;opacity:.8;line-height:1.4}
-    .ok{color:#7CFFB2}
-    .err{color:#FF7C7C}
-    .small{font-size:11px;opacity:.75}
-    code{background:rgba(255,255,255,.08);padding:2px 6px;border-radius:8px}
+    :root { color-scheme: dark; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: #0b1220;
+      color: #e6eefc;
+    }
+    .wrap { max-width: 560px; margin: 0 auto; padding: 18px; }
+    .card {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+      margin-bottom: 12px;
+    }
+    h1 { font-size: 20px; margin: 0 0 6px; }
+    p  { margin: 0 0 10px; opacity: 0.85; line-height: 1.35; }
+    label { display: block; font-size: 12px; opacity: 0.85; margin: 10px 0 6px; }
+    input, select, textarea, button {
+      width: 100%;
+      box-sizing: border-box;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.25);
+      color: #e6eefc;
+      padding: 12px 12px;
+      font-size: 14px;
+      outline: none;
+    }
+    textarea { min-height: 92px; resize: vertical; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btn {
+      background: #2d6cff;
+      border: 1px solid rgba(255,255,255,0.12);
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn2 {
+      background: rgba(255,255,255,0.08);
+      border: 1px dashed rgba(255,255,255,0.20);
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .hint { font-size: 12px; opacity: 0.75; margin-top: 8px; }
+    .err { color: #ff6b6b; font-size: 12px; margin-top: 8px; }
+    .ok  { color: #61ffb1; font-size: 12px; margin-top: 8px; }
+    .footer { opacity: 0.7; font-size: 12px; margin-top: 8px; }
+    code { background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 8px; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="card">
-      <h2 style="margin:0 0 8px">P.A.T.I.H — Mutasi Stok</h2>
+      <h1>P.A.T.I.H — Mutasi Stok</h1>
+      <p>
+        Isi form, lalu tekan <b>Kirim</b>. Jika dibuka dari Telegram, data akan dikirim via
+        <code>tg.sendData()</code>. Jika dibuka dari browser biasa, fallback akan POST ke webhook (untuk testing).
+      </p>
       <div class="hint">
-        Isi form, lalu tekan <b>Kirim</b>. Di Telegram, data akan dikirim via <code>tg.sendData()</code>.
-        Jika halaman dibuka di browser biasa, fallback akan POST ke webhook (untuk testing).
+        Versi: <b>v7</b> • Webhook fallback: <code id="wh"></code>
       </div>
     </div>
 
-    <div class="card">
-      <label>Tipe Transaksi</label>
-      <select id="act">
-        <option value="Masuk Gudang">Masuk Gudang</option>
-        <option value="Keluar Gudang">Keluar Gudang</option>
-        <option value="Retur">Retur</option>
+    <form id="form" class="card">
+      <label>Type Transaksi</label>
+      <select id="type" required>
+        <option>Masuk Gudang</option>
+        <option>Keluar Gudang</option>
+        <option>Retur</option>
+        <option>Pasang</option>
       </select>
 
-      <div class="row">
+      <div class="grid2">
         <div>
           <label>SKU</label>
-          <input id="sku" placeholder="contoh: KABEL-1KM" />
+          <input id="sku" placeholder="contoh: Kabel 1km" required />
         </div>
         <div>
           <label>Jumlah</label>
-          <input id="qty" type="number" min="0" step="1" placeholder="contoh: 2" />
+          <input id="qty" type="number" min="1" step="1" value="1" required />
         </div>
       </div>
 
       <label>Keterangan (opsional)</label>
-      <textarea id="ket" placeholder="misal: ODP A1 / lokasi / catatan"></textarea>
+      <textarea id="note" placeholder="contoh: untuk proyek A"></textarea>
 
-      <div class="row">
+      <div class="grid2">
         <div>
           <label>Latitude</label>
-          <input id="lat" inputmode="decimal" placeholder="-6.2" />
+          <input id="lat" inputmode="decimal" placeholder="-7.7" required />
         </div>
         <div>
           <label>Longitude</label>
-          <input id="lng" inputmode="decimal" placeholder="106.8" />
+          <input id="lng" inputmode="decimal" placeholder="110.4" required />
         </div>
       </div>
 
-      <button class="secondary" id="btnLoc">Ambil Lokasi (GPS)</button>
-      <button id="btnSend">Kirim</button>
+      <button type="button" class="btn2" id="gps">Ambil Lokasi (GPS)</button>
 
-      <div id="status" class="small" style="margin-top:10px"></div>
-    </div>
+      <label>Foto (opsional, untuk OCR/arsip)</label>
+      <input id="photo" type="file" accept="image/*" />
 
-    <div class="card">
-      <div class="hint">
-        <b>Tips:</b> setelah transaksi, kalau butuh foto susulan cukup kirim foto ke bot.
-        Sistem akan menempelkan foto ke transaksi terakhir yang statusnya <code>WAIT_PHOTO</code>.
-      </div>
+      <button type="submit" class="btn" id="send">Kirim</button>
+
+      <div id="status" class="hint"></div>
+    </form>
+
+    <div class="card footer">
+      Tips: setelah transaksi, kalau butuh foto susulan cukup kirim foto ke bot. Sistem akan menempelkan foto ke transaksi terakhir yang statusnya <b>WAIT_PHOTO</b>.
     </div>
   </div>
 
-  <script>
-    const tg = window.Telegram?.WebApp;
+<script>
+(function () {
+  const FALLBACK_WEBHOOK = "https://n8ring.gatrapurna.my.id/webhook/patih-v7/brain";
+  document.getElementById("wh").textContent = FALLBACK_WEBHOOK;
 
-    // webhook fallback (untuk testing di browser non-Telegram)
-    const WEBHOOK_FALLBACK = "https://n8ring.gatrapurna.my.id/webhook/patih-v7/brain";
+  const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+  if (tg) {
+    tg.expand();
+    tg.ready();
+  }
 
-    function setStatus(msg, ok=true){
-      const el = document.getElementById("status");
-      el.innerHTML = ok ? `<span class="ok">✅ ${msg}</span>` : `<span class="err">❌ ${msg}</span>`;
+  const $ = (id) => document.getElementById(id);
+  const statusEl = $("status");
+
+  function setStatus(text, kind) {
+    statusEl.className = kind === "err" ? "err" : (kind === "ok" ? "ok" : "hint");
+    statusEl.textContent = text;
+  }
+
+  async function fileToDataUrl(file) {
+    // compress a bit using canvas to keep payload small
+    const img = document.createElement("img");
+    const url = URL.createObjectURL(file);
+    img.src = url;
+    await new Promise((res, rej) => { img.onload = res; img.onerror = rej; });
+
+    const maxW = 1280;
+    const scale = Math.min(1, maxW / img.width);
+    const w = Math.round(img.width * scale);
+    const h = Math.round(img.height * scale);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0, w, h);
+
+    URL.revokeObjectURL(url);
+    return canvas.toDataURL("image/jpeg", 0.80);
+  }
+
+  $("gps").addEventListener("click", () => {
+    if (!navigator.geolocation) {
+      setStatus("Browser tidak mendukung geolocation.", "err");
+      return;
     }
+    setStatus("Mengambil lokasi…");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        $("lat").value = pos.coords.latitude.toFixed(6);
+        $("lng").value = pos.coords.longitude.toFixed(6);
+        setStatus("Lokasi terisi ✅", "ok");
+      },
+      (err) => setStatus("Gagal ambil GPS: " + err.message, "err"),
+      { enableHighAccuracy: true, timeout: 12000 }
+    );
+  });
 
-    function numOrNull(v){
-      if(v === null || v === undefined) return null;
-      const s = String(v).trim();
-      if(!s) return null;
-      const n = Number(s);
-      return Number.isFinite(n) ? n : null;
-    }
+  $("form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    $("send").disabled = true;
+    setStatus("Mengirim…");
 
-    async function getLocation(){
-      return new Promise((resolve, reject) => {
-        if(!navigator.geolocation) return reject(new Error("Geolocation tidak tersedia"));
-        navigator.geolocation.getCurrentPosition(
-          (pos) => resolve({lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy_m: pos.coords.accuracy}),
-          (err) => reject(err),
-          {enableHighAccuracy:true, timeout:12000, maximumAge:0}
-        );
-      });
-    }
+    const payload = {
+      mode: "WEBAPP",
+      version: "v7",
+      act: $("type").value,
+      sku: $("sku").value.trim(),
+      qty: parseInt($("qty").value, 10),
+      note: $("note").value.trim(),
+      lat: parseFloat($("lat").value),
+      lng: parseFloat($("lng").value),
+      ts: Date.now(),
+    };
 
-    document.getElementById("btnLoc").addEventListener("click", async () => {
-      try{
-        setStatus("Mengambil lokasi...", true);
-        const loc = await getLocation();
-        document.getElementById("lat").value = loc.lat;
-        document.getElementById("lng").value = loc.lng;
-        setStatus(`Lokasi didapat (akurasi ±${Math.round(loc.accuracy_m)}m)`, true);
-      }catch(e){
-        setStatus(e.message || "Gagal ambil lokasi", false);
+    const file = $("photo").files && $("photo").files[0];
+    if (file) {
+      try {
+        payload.photo_b64 = await fileToDataUrl(file);
+        payload.photo_name = file.name;
+      } catch (e2) {
+        console.warn(e2);
       }
-    });
+    }
 
-    document.getElementById("btnSend").addEventListener("click", async () => {
-      const act = document.getElementById("act").value;
-      const sku = document.getElementById("sku").value.trim();
-      const qty = Number(document.getElementById("qty").value || "0");
-      const ket = document.getElementById("ket").value.trim();
-      const lat = numOrNull(document.getElementById("lat").value);
-      const lng = numOrNull(document.getElementById("lng").value);
-
-      if(!sku){ setStatus("SKU wajib diisi", false); return; }
-      if(!Number.isFinite(qty) || qty <= 0){ setStatus("Jumlah harus > 0", false); return; }
-
-      const payload = {
-        type: "MUTASI_STOK",
-        action: act,
-        sku,
-        qty,
-        keterangan: ket || null,
-        lat,
-        lng,
-        ts_client: new Date().toISOString()
-      };
-
-      try{
-        // Telegram WebApp path (preferred)
-        if(tg && typeof tg.sendData === "function"){
-          tg.sendData(JSON.stringify(payload));
-          setStatus("Data terkirim ke bot. Silakan kembali ke chat Telegram.", true);
-          if(tg.close) tg.close();
-          return;
-        }
-
-        // Fallback: direct webhook (for browser testing)
-        setStatus("Mode browser: mengirim ke webhook...", true);
-        const res = await fetch(WEBHOOK_FALLBACK, {
+    try {
+      if (tg) {
+        tg.sendData(JSON.stringify(payload));
+        setStatus("Terkirim ke bot ✅. Silakan tutup halaman ini.", "ok");
+      } else {
+        const r = await fetch(FALLBACK_WEBHOOK, {
           method: "POST",
-          headers: {"Content-Type":"application/json"},
-          body: JSON.stringify({mode:"WEBAPP", ...payload})
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(payload),
         });
-        const data = await res.json().catch(()=> ({}));
-        if(res.ok && (data.ok || data.status === "ok")){
-          setStatus(data.reply_text || "OK", true);
-        }else{
-          setStatus(data.message || "Webhook error", false);
-        }
-      }catch(e){
-        setStatus(e.message || "Gagal kirim", false);
+        const out = await r.json().catch(() => ({}));
+        if (!r.ok || out.ok === false) throw new Error(out.text || out.message || "Webhook error");
+        setStatus("Webhook OK ✅: " + (out.text || "Success"), "ok");
       }
-    });
-
-    // Telegram UI polish
-    if(tg){
-      tg.ready();
-      tg.expand();
+    } catch (err) {
+      console.error(err);
+      setStatus("Webhook error: " + (err.message || err), "err");
+    } finally {
+      $("send").disabled = false;
     }
-  </script>
+  });
+})();
+</script>
 </body>
 </html>
