@@ -139,27 +139,7 @@
     statusEl.textContent = text;
   }
 
-  async function fileToDataUrl(file) {
-    // compress a bit using canvas to keep payload small
-    const img = document.createElement("img");
-    const url = URL.createObjectURL(file);
-    img.src = url;
-    await new Promise((res, rej) => { img.onload = res; img.onerror = rej; });
-
-    const maxW = 1280;
-    const scale = Math.min(1, maxW / img.width);
-    const w = Math.round(img.width * scale);
-    const h = Math.round(img.height * scale);
-
-    const canvas = document.createElement("canvas");
-    canvas.width = w; canvas.height = h;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(img, 0, 0, w, h);
-
-    URL.revokeObjectURL(url);
-    return canvas.toDataURL("image/jpeg", 0.80);
-  }
-
+  async 
   $("gps").addEventListener("click", () => {
     if (!navigator.geolocation) {
       setStatus("Browser tidak mendukung geolocation.", "err");
@@ -197,7 +177,6 @@
     const file = $("photo").files && $("photo").files[0];
     if (file) {
       try {
-        payload.photo_b64 = await fileToDataUrl(file);
         payload.photo_name = file.name;
       } catch (e2) {
         console.warn(e2);
