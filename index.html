@@ -2,263 +2,282 @@
 <html lang="id">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>P.A.T.I.H — Mutasi Stok (v7)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+  <title>P.A.T.I.H — Intelligent Ops</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
-    :root { color-scheme: dark; }
+    :root { 
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --input-bg: #334155;
+      --accent: #3b82f6;
+      --text: #f1f5f9;
+      --danger: #ef4444;
+      --success: #10b981;
+    }
     body {
       margin: 0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background: #0b1220;
-      color: #e6eefc;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
     }
-    .wrap { max-width: 720px; margin: 0 auto; padding: 18px; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    
+    /* Header */
+    .header { text-align: center; margin-bottom: 24px; }
+    .header h1 { margin: 0; font-size: 22px; font-weight: 700; background: linear-gradient(90deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .header p { font-size: 13px; opacity: 0.7; margin-top: 5px; }
+
+    /* Cards */
     .card {
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.10);
-      border-radius: 18px;
-      padding: 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-      margin-bottom: 12px;
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      margin-bottom: 16px;
+      border: 1px solid rgba(255,255,255,0.05);
     }
-    h1 { font-size: 20px; margin: 0 0 6px; }
-    p { margin: 0 0 10px; opacity: .85; line-height: 1.35; }
-    label { display:block; font-size:12px; opacity:.85; margin: 10px 0 6px; }
-    input, select, textarea, button {
+
+    /* Form Elements */
+    label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: #94a3b8; }
+    input, select, textarea {
       width: 100%;
-      box-sizing: border-box;
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,0.14);
-      background: rgba(255,255,255,0.06);
-      color: #e6eefc;
-      padding: 12px 12px;
+      background: var(--input-bg);
+      border: 1px solid transparent;
+      color: white;
+      padding: 12px;
+      border-radius: 10px;
       font-size: 14px;
+      box-sizing: border-box;
       outline: none;
+      transition: all 0.2s;
     }
-    textarea { min-height: 90px; resize: vertical; }
-    .row { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+    
+    /* Scanner Area */
+    #reader { width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 15px; display: none; }
+    
+    /* Buttons */
+    .btn-group { display: flex; gap: 10px; margin-top: 10px; }
     .btn {
-      cursor: pointer;
-      border: 0;
-      background: #2b6ff7;
+      flex: 1;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
       font-weight: 600;
-      margin-top: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
-    .btn.secondary { background: rgba(255,255,255,0.10); }
-    .hint { font-size: 12px; opacity: .75; margin-top: 10px; }
-    .status { font-size: 13px; margin-top: 10px; }
-    .status.ok { color: #7CFFB2; }
-    .status.err { color: #ff7c7c; }
-    .small { font-size: 11px; opacity: .75; word-break: break-all; }
-    img.preview { width: 100%; border-radius: 14px; margin-top: 10px; display:none; }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-secondary { background: #475569; color: white; }
+    .btn-scan { background: #f59e0b; color: #0f172a; margin-bottom: 10px; width: 100%; }
+
+    /* Feedback */
+    .status { 
+      margin-top: 15px; 
+      padding: 12px; 
+      border-radius: 10px; 
+      font-size: 13px; 
+      text-align: center; 
+      display: none; 
+    }
+    .status.success { background: rgba(16, 185, 129, 0.2); color: var(--success); border: 1px solid var(--success); }
+    .status.error { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid var(--danger); }
+    
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      <h1>P.A.T.I.H — Mutasi Stok</h1>
-      <p>Isi form, lalu tekan <b>Kirim</b>. Data dikirim ke webhook v7 (POST). Jika dibuka di Telegram, halaman akan coba menampilkan notifikasi sukses/gagal.</p>
-      <div class="small">Versi: v7 • Webhook: https://n8ring.gatrapurna.my.id/webhook/patih-v7/brain</div>
-    </div>
 
-    <form id="form" class="card">
-      <label>Type Transaksi</label>
-      <select id="act" required>
-        <option value="Masuk Gudang">Masuk Gudang</option>
-        <option value="Keluar Gudang">Keluar Gudang</option>
-        <option value="Pasang">Pasang</option>
-        <option value="Retur">Retur</option>
-      </select>
-
-      <div class="row">
-        <div>
-          <label>SKU</label>
-          <input id="sku" placeholder="Contoh: Kabel 1km" required />
-        </div>
-        <div>
-          <label>Jumlah</label>
-          <input id="qty" type="number" min="1" step="1" value="1" required />
-        </div>
-      </div>
-
-      <label>Keterangan (opsional)</label>
-      <textarea id="note" placeholder="Catatan tambahan..."></textarea>
-
-      <div class="row">
-        <div>
-          <label>Latitude</label>
-          <input id="lat" inputmode="decimal" placeholder="-7.7" />
-        </div>
-        <div>
-          <label>Longitude</label>
-          <input id="lng" inputmode="decimal" placeholder="110.4" />
-        </div>
-      </div>
-
-      <button type="button" id="btnGps" class="btn secondary">Ambil Lokasi (GPS)</button>
-
-      <label>Foto (opsional, untuk OCR/arsip)</label>
-      <input id="photo" type="file" accept="image/*" capture="environment" />
-      <img id="preview" class="preview" alt="Preview foto" />
-
-      <button type="submit" class="btn" id="btnSubmit">Kirim</button>
-
-      <div id="status" class="status"></div>
-      <div class="hint">
-        Tips: jika upload foto gagal, tetap kirim transaksi tanpa foto lalu kirim foto lewat chat bot (sistem akan menempelkan ke transaksi terakhir yang statusnya <code>WAIT_PHOTO</code>).
-      </div>
-    </form>
+<div class="container">
+  <div class="header">
+    <h1>P.A.T.I.H V9.2</h1>
+    <p>Logistic & Operation System</p>
   </div>
 
+  <div id="reader"></div>
+
+  <form id="patihForm" class="card">
+    <label>Tipe Transaksi</label>
+    <select id="act" required>
+      <option value="Masuk Gudang">📥 Masuk Gudang (Restock)</option>
+      <option value="Keluar Gudang">📤 Keluar Gudang (Usage)</option>
+      <option value="Pasang">🔧 Pasang ke Client</option>
+      <option value="Retur">↩️ Retur Barang</option>
+    </select>
+
+    <div style="margin-top: 15px;">
+      <label>Serial Number / SKU</label>
+      <button type="button" id="btnScan" class="btn btn-scan">📷 Scan Barcode/QR</button>
+      <input id="sku" placeholder="Scan atau ketik manual..." required />
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
+      <div>
+        <label>Jumlah</label>
+        <input id="qty" type="number" value="1" min="1" required />
+      </div>
+      <div>
+        <label>GPS (Lat, Lng)</label>
+        <input id="gps" placeholder="Auto-detect..." readonly />
+      </div>
+    </div>
+
+    <div style="margin-top: 15px;">
+      <label>Keterangan</label>
+      <textarea id="note" rows="2" placeholder="ODP, No. Tiket, atau Keterangan..."></textarea>
+    </div>
+
+    <div style="margin-top: 15px;">
+      <label>Bukti Foto (Opsional)</label>
+      <input type="file" id="photo" accept="image/*" capture="environment" />
+    </div>
+
+    <button type="submit" id="btnSubmit" class="btn btn-primary" style="margin-top: 20px; width: 100%;">
+      🚀 KIRIM DATA
+    </button>
+
+    <div id="statusBox" class="status"></div>
+  </form>
+</div>
+
 <script>
-(function() {
-  const tg = window.Telegram?.WebApp;
-  const isTg = !!tg && !!tg.initData;
+  // --- CONFIGURATION ---
+  // PENTING: URL ini mengarah ke Tunnel n8n Anda (V9)
+  const N8N_WEBHOOK_URL = "https://n8ring.gatrapurna.my.id/webhook/patih-v9/brain"; 
 
-  const WEBHOOK_URL = "https://n8ring.gatrapurna.my.id/webhook/patih-v7/brain";
-  const el = (id) => document.getElementById(id);
-  const statusEl = el("status");
+  const tg = window.Telegram.WebApp;
+  const html5QrCode = new Html5Qrcode("reader");
+  let lat = null, lng = null;
 
-  function setStatus(msg, ok=false) {
-    statusEl.textContent = msg || "";
-    statusEl.className = "status " + (ok ? "ok" : "err");
-    if (isTg && msg) {
-      try {
-        if (ok) tg.showPopup({ title: "P.A.T.I.H", message: msg, buttons: [{type:"ok"}] });
-        else tg.showPopup({ title: "P.A.T.I.H (Error)", message: msg, buttons: [{type:"ok"}] });
-      } catch (e) {}
+  // Init Telegram
+  tg.ready();
+  tg.expand();
+
+  // --- GPS LOGIC ---
+  function getGPS() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          lat = pos.coords.latitude;
+          lng = pos.coords.longitude;
+          document.getElementById('gps').value = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+        },
+        (err) => { document.getElementById('gps').placeholder = "GPS Error / Denied"; }
+      );
     }
   }
+  // Ambil GPS saat load
+  getGPS();
 
-  if (isTg) {
-    try {
-      tg.ready();
-      tg.expand();
-      tg.MainButton?.hide();
-    } catch (e) {}
+  // --- SCANNER LOGIC ---
+  const btnScan = document.getElementById('btnScan');
+  let isScanning = false;
+
+  btnScan.addEventListener('click', () => {
+    if (!isScanning) {
+      document.getElementById('reader').style.display = 'block';
+      html5QrCode.start(
+        { facingMode: "environment" }, 
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText, decodedResult) => {
+          // Success Scan
+          document.getElementById('sku').value = decodedText;
+          stopScanner();
+          tg.HapticFeedback.notificationOccurred('success');
+        },
+        (errorMessage) => {
+          // Scanning...
+        }
+      ).catch(err => {
+        alert("Kamera error: " + err);
+      });
+      btnScan.innerText = "❌ Stop Camera";
+      isScanning = true;
+    } else {
+      stopScanner();
+    }
+  });
+
+  function stopScanner() {
+    html5QrCode.stop().then(() => {
+      document.getElementById('reader').style.display = 'none';
+      btnScan.innerText = "📷 Scan Barcode/QR";
+      isScanning = false;
+    }).catch(err => console.log(err));
   }
 
-  // Preview foto
-  el("photo").addEventListener("change", () => {
-    const f = el("photo").files?.[0];
-    const img = el("preview");
-    if (!f) { img.style.display = "none"; img.src = ""; return; }
-    const url = URL.createObjectURL(f);
-    img.src = url;
-    img.style.display = "block";
-  });
+  // --- SUBMIT LOGIC ---
+  document.getElementById('patihForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btnSubmit');
+    const statusBox = document.getElementById('statusBox');
+    
+    btn.disabled = true;
+    btn.innerText = "Mengirim...";
+    statusBox.style.display = 'none';
 
-  // GPS
-  el("btnGps").addEventListener("click", () => {
-    setStatus("Meminta lokasi...", true);
-    if (!navigator.geolocation) {
-      setStatus("Browser tidak mendukung GPS.", false);
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        el("lat").value = String(pos.coords.latitude);
-        el("lng").value = String(pos.coords.longitude);
-        setStatus("Lokasi berhasil diambil.", true);
-      },
-      (err) => {
-        setStatus("Gagal ambil lokasi: " + (err?.message || "permission ditolak"), false);
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-    );
-  });
-
-  // Submit
-  el("form").addEventListener("submit", async (ev) => {
-    ev.preventDefault();
-    setStatus("");
-
-    const act = el("act").value;
-    const sku = el("sku").value.trim();
-    const qty = Number(el("qty").value || 0);
-    const note = el("note").value.trim();
-    const lat = el("lat").value.trim();
-    const lng = el("lng").value.trim();
-    const photo = el("photo").files?.[0] || null;
-
-    if (!sku || !qty || qty < 1) {
-      setStatus("Mohon lengkapi SKU dan Jumlah.", false);
-      return;
+    // Prepare Data
+    const formData = new FormData();
+    formData.append('source', 'miniapp_v9');
+    formData.append('act', document.getElementById('act').value);
+    formData.append('sku', document.getElementById('sku').value);
+    formData.append('qty', document.getElementById('qty').value);
+    formData.append('note', document.getElementById('note').value);
+    formData.append('lat', lat || '');
+    formData.append('lng', lng || '');
+    
+    // Telegram User Data
+    if (tg.initDataUnsafe?.user) {
+      formData.append('chat_id', tg.initDataUnsafe.user.id);
+      formData.append('username', tg.initDataUnsafe.user.username || 'NoUsername');
     }
 
-    // chat_id untuk private chat = user.id (cukup untuk kirim balasan bot)
-    const user = isTg ? tg.initDataUnsafe?.user : null;
-    const chat_id = user?.id || null;
-    const username = user?.username || null;
-
-    // Kirim ke webhook pakai FormData (bisa termasuk file)
-    const fd = new FormData();
-    fd.append("source", isTg ? "telegram_webapp" : "browser");
-    fd.append("act", act);
-    fd.append("sku", sku);
-    fd.append("qty", String(qty));
-    fd.append("note", note);
-    if (lat) fd.append("lat", lat);
-    if (lng) fd.append("lng", lng);
-    if (chat_id) fd.append("chat_id", String(chat_id));
-    if (username) fd.append("username", username);
-
-    // initData untuk verifikasi (opsional di server)
-    if (isTg) fd.append("tg_init_data", tg.initData);
-
-    if (photo) fd.append("photo", photo, photo.name);
-
-    el("btnSubmit").disabled = true;
-    el("btnSubmit").textContent = "Mengirim...";
+    // Photo File
+    const fileInput = document.getElementById('photo');
+    if (fileInput.files.length > 0) {
+      formData.append('photo', fileInput.files[0]);
+    }
 
     try {
-      const res = await fetch(WEBHOOK_URL, {
-        method: "POST",
-        body: fd,
+      const response = await fetch(N8N_WEBHOOK_URL, {
+        method: 'POST',
+        body: formData
       });
 
-      const ct = res.headers.get("content-type") || "";
-      let data = null;
-      if (ct.includes("application/json")) {
-        data = await res.json();
+      const result = await response.json();
+
+      if (response.ok) {
+        statusBox.innerText = "✅ Data Berhasil Disimpan!";
+        statusBox.className = "status success";
+        statusBox.style.display = 'block';
+        tg.HapticFeedback.notificationOccurred('success');
+        
+        // Reset form partial
+        document.getElementById('sku').value = '';
+        document.getElementById('note').value = '';
+        document.getElementById('photo').value = '';
+        
+        setTimeout(() => { tg.close(); }, 2000); // Opsional: tutup app otomatis
       } else {
-        const t = await res.text();
-        data = { ok: res.ok, message: t };
+        throw new Error(result.message || "Server Reject");
       }
-
-      if (!res.ok || data?.ok === false) {
-        const msg = data?.message || data?.error || ("HTTP " + res.status);
-        setStatus("Gagal: " + msg, false);
-        return;
-      }
-
-      setStatus(data?.message || "Berhasil dikirim.", true);
-
-      // optional: kirim sinyal kecil ke bot (tanpa payload besar) — biar tidak WebAppDataInvalid
-      if (isTg) {
-        try {
-          tg.sendData(JSON.stringify({ t:"submitted", sku, act, qty }));
-        } catch (e) {}
-      }
-
-      // reset form (kecuali act)
-      el("sku").value = "";
-      el("qty").value = "1";
-      el("note").value = "";
-      // jangan hapus lat/lng biar enak transaksi berurutan
-      el("photo").value = "";
-      el("preview").style.display = "none";
-      el("preview").src = "";
-
-    } catch (e) {
-      setStatus("Error jaringan: " + (e?.message || e), false);
+    } catch (error) {
+      statusBox.innerText = "❌ Gagal: " + error.message;
+      statusBox.className = "status error";
+      statusBox.style.display = 'block';
+      tg.HapticFeedback.notificationOccurred('error');
     } finally {
-      el("btnSubmit").disabled = false;
-      el("btnSubmit").textContent = "Kirim";
+      btn.disabled = false;
+      btn.innerText = "🚀 KIRIM DATA";
     }
   });
-})();
 </script>
+
 </body>
 </html>
