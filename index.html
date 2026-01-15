@@ -1,157 +1,6 @@
-<!doctype html>
-<html lang="id">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-  <title>P.A.T.I.H — Intelligent Ops</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-  <style>
-    :root { 
-      --bg-color: #0f172a;
-      --card-bg: #1e293b;
-      --input-bg: #334155;
-      --accent: #3b82f6;
-      --text: #f1f5f9;
-      --danger: #ef4444;
-      --success: #10b981;
-    }
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text);
-      -webkit-font-smoothing: antialiased;
-    }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    
-    /* Header */
-    .header { text-align: center; margin-bottom: 24px; }
-    .header h1 { margin: 0; font-size: 22px; font-weight: 700; background: linear-gradient(90deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .header p { font-size: 13px; opacity: 0.7; margin-top: 5px; }
-
-    /* Cards */
-    .card {
-      background: var(--card-bg);
-      border-radius: 16px;
-      padding: 20px;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-      margin-bottom: 16px;
-      border: 1px solid rgba(255,255,255,0.05);
-    }
-
-    /* Form Elements */
-    label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: #94a3b8; }
-    input, select, textarea {
-      width: 100%;
-      background: var(--input-bg);
-      border: 1px solid transparent;
-      color: white;
-      padding: 12px;
-      border-radius: 10px;
-      font-size: 14px;
-      box-sizing: border-box;
-      outline: none;
-      transition: all 0.2s;
-    }
-    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
-    
-    /* Scanner Area */
-    #reader { width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 15px; display: none; }
-    
-    /* Buttons */
-    .btn-group { display: flex; gap: 10px; margin-top: 10px; }
-    .btn {
-      flex: 1;
-      padding: 14px;
-      border: none;
-      border-radius: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-    .btn-primary { background: var(--accent); color: white; }
-    .btn-secondary { background: #475569; color: white; }
-    .btn-scan { background: #f59e0b; color: #0f172a; margin-bottom: 10px; width: 100%; }
-
-    /* Feedback */
-    .status { 
-      margin-top: 15px; 
-      padding: 12px; 
-      border-radius: 10px; 
-      font-size: 13px; 
-      text-align: center; 
-      display: none; 
-    }
-    .status.success { background: rgba(16, 185, 129, 0.2); color: var(--success); border: 1px solid var(--success); }
-    .status.error { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid var(--danger); }
-    
-    .hidden { display: none !important; }
-  </style>
-</head>
-<body>
-
-<div class="container">
-  <div class="header">
-    <h1>P.A.T.I.H V9.4</h1>
-    <p>Protocol Autonomous Technical Inventory Handler</p>
-  </div>
-
-  <div id="reader"></div>
-
-  <form id="patihForm" class="card">
-    <label>Tipe Transaksi</label>
-    <select id="act" required>
-      <option value="Masuk Gudang">📥 Masuk Gudang (Restock)</option>
-      <option value="Keluar Gudang">📤 Keluar Gudang (Usage)</option>
-      <option value="Pasang">🔧 Pasang ke Client</option>
-      <option value="Retur">↩️ Retur Barang</option>
-    </select>
-
-    <div style="margin-top: 15px;">
-      <label>Serial Number / SKU</label>
-      <button type="button" id="btnScan" class="btn btn-scan">📷 Scan Barcode/QR</button>
-      <input id="sku" placeholder="Scan atau ketik manual..." required />
-    </div>
-
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
-      <div>
-        <label>Jumlah</label>
-        <input id="qty" type="number" value="1" min="1" required />
-      </div>
-      <div>
-        <label>GPS (Lat, Lng)</label>
-        <input id="gps" placeholder="Auto-detect..." readonly />
-      </div>
-    </div>
-
-    <div style="margin-top: 15px;">
-      <label>Keterangan</label>
-      <textarea id="note" rows="2" placeholder="ODP, No. Tiket, atau Keterangan..."></textarea>
-    </div>
-
-   <div style="display:none;">
-    <label>Bukti Foto (Opsional)</label>
-    <input type="file" id="photo" accept="image/*" capture="environment" />
-</div>
-<p style="font-size:12px; color:#fbbf24; text-align:center;">
-    📸 Info: Foto bukti dikirim lewat Chat Telegram setelah klik tombol Kirim Data.
-</p>
-
-    <button type="submit" id="btnSubmit" class="btn btn-primary" style="margin-top: 20px; width: 100%;">
-      🚀 KIRIM DATA
-    </button>
-
-    <div id="statusBox" class="status"></div>
-  </form>
-</div>
-
 <script>
   // --- CONFIGURATION ---
-  // PENTING: URL ini mengarah ke Tunnel n8n Anda (V9)
+  // Pastikan URL ini sesuai dengan Production URL n8n Anda
   const N8N_WEBHOOK_URL = "https://n8ring.gatrapurna.my.id/webhook/patih-v9/brain"; 
 
   const tg = window.Telegram.WebApp;
@@ -175,19 +24,31 @@
       );
     }
   }
-  // Ambil GPS saat load
   getGPS();
 
-  // --- SCANNER LOGIC ---
+  // --- SCANNER LOGIC (UPGRADED) ---
   const btnScan = document.getElementById('btnScan');
   let isScanning = false;
 
   btnScan.addEventListener('click', () => {
     if (!isScanning) {
       document.getElementById('reader').style.display = 'block';
+      
+      // KONFIGURASI BARU: Support QR + Barcode (SN)
+      const config = { 
+        fps: 10, 
+        qrbox: { width: 250, height: 150 }, // Kotak lebih lebar untuk barcode panjang
+        formatsToSupport: [ 
+            Html5QrcodeSupportedFormats.QR_CODE,
+            Html5QrcodeSupportedFormats.CODE_128, // Standard SN
+            Html5QrcodeSupportedFormats.CODE_39,
+            Html5QrcodeSupportedFormats.EAN_13
+        ]
+      };
+
       html5QrCode.start(
         { facingMode: "environment" }, 
-        { fps: 10, qrbox: { width: 250, height: 250 } },
+        config,
         (decodedText, decodedResult) => {
           // Success Scan
           document.getElementById('sku').value = decodedText;
@@ -195,11 +56,14 @@
           tg.HapticFeedback.notificationOccurred('success');
         },
         (errorMessage) => {
-          // Scanning...
+          // Scanning... (ignore errors)
         }
       ).catch(err => {
         alert("Kamera error: " + err);
+        btnScan.innerText = "📷 Scan Barcode/QR";
+        isScanning = false;
       });
+      
       btnScan.innerText = "❌ Stop Camera";
       isScanning = true;
     } else {
@@ -241,7 +105,7 @@
       formData.append('username', tg.initDataUnsafe.user.username || 'NoUsername');
     }
 
-    // Photo File
+    // Photo File (Keep logic just in case, though hidden)
     const fileInput = document.getElementById('photo');
     if (fileInput.files.length > 0) {
       formData.append('photo', fileInput.files[0]);
@@ -266,7 +130,7 @@
         document.getElementById('note').value = '';
         document.getElementById('photo').value = '';
         
-        setTimeout(() => { tg.close(); }, 2000); // Opsional: tutup app otomatis
+        setTimeout(() => { tg.close(); }, 2000); 
       } else {
         throw new Error(result.message || "Server Reject");
       }
@@ -281,8 +145,3 @@
     }
   });
 </script>
-
-</body>
-</html>
-
-
