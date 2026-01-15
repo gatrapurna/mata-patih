@@ -252,60 +252,65 @@
     }
     getGPS();
 
-    // --- SCANNER LOGIC (UPGRADED) ---
-    const btnScan = document.getElementById('btnScan');
-    let isScanning = false;
+   // --- SCANNER LOGIC (HD OPTIMIZED) ---
+  const btnScan = document.getElementById('btnScan');
+  let isScanning = false;
 
-    btnScan.addEventListener('click', () => {
-      if (!isScanning) {
-        document.getElementById('reader').style.display = 'block';
-
-       // --- UPDATE BAGIAN INI DI SCRIPT ---
+  btnScan.addEventListener('click', () => {
+    if (!isScanning) {
+      document.getElementById('reader').style.display = 'block';
       
+      // 1. KONFIGURASI SCANNER (Software)
       const config = { 
-        fps: 10, 
-        // UBAH GEOMETRI: Lebih lebar, kurang tinggi (Persegi Panjang)
-        qrbox: { width: 280, height: 100 }, 
+        fps: 10,
+        // Box sedikit lebih besar agar user lebih leluasa
+        qrbox: { width: 280, height: 150 }, 
         aspectRatio: 1.0,
-        
-        // FITUR BARU: Gunakan Hardware HP jika ada (Super Cepat)
+        // Experimental Features tetap ON
         experimentalFeatures: {
             useBarCodeDetectorIfSupported: true
         },
-        
-        // SUPPORT FORMAT LENGKAP
         formatsToSupport: [ 
             Html5QrcodeSupportedFormats.QR_CODE,
-            Html5QrcodeSupportedFormats.CODE_128, // Serial Number (Paling Umum)
+            Html5QrcodeSupportedFormats.CODE_128, 
             Html5QrcodeSupportedFormats.CODE_39,
             Html5QrcodeSupportedFormats.EAN_13
         ]
       };
 
-        html5QrCode.start(
-          { facingMode: "environment" },
-          config,
-          (decodedText, decodedResult) => {
-            // Success Scan
-            document.getElementById('sku').value = decodedText;
-            stopScanner();
-            tg.HapticFeedback.notificationOccurred('success');
-          },
-          (errorMessage) => {
-            // Scanning... (ignore errors)
-          }
-        ).catch(err => {
-          alert("Kamera error: " + err);
-          btnScan.innerText = "📷 Scan Barcode/QR";
-          isScanning = false;
-        });
+      // 2. KONFIGURASI KAMERA (Hardware) - INI KUNCINYA
+      const cameraConfig = { 
+        facingMode: "environment",
+        // PAKSA RESOLUSI TINGGI (HD) AGAR BARCODE JELAS
+        width: { min: 640, ideal: 1280, max: 1920 },
+        height: { min: 480, ideal: 720, max: 1080 },
+        focusMode: "continuous" // Mencoba autofocus terus menerus
+      };
 
-        btnScan.innerText = "❌ Stop Camera";
-        isScanning = true;
-      } else {
-        stopScanner();
-      }
-    });
+      html5QrCode.start(
+        cameraConfig, 
+        config,
+        (decodedText, decodedResult) => {
+          // Success Scan
+          document.getElementById('sku').value = decodedText;
+          stopScanner();
+          tg.HapticFeedback.notificationOccurred('success');
+        },
+        (errorMessage) => {
+          // Scanning...
+        }
+      ).catch(err => {
+        alert("Kamera error: " + err);
+        btnScan.innerText = "📷 Scan Barcode/QR";
+        isScanning = false;
+      });
+      
+      btnScan.innerText = "❌ Stop Camera";
+      isScanning = true;
+    } else {
+      stopScanner();
+    }
+  });
 
     function stopScanner() {
       html5QrCode.stop().then(() => {
@@ -385,4 +390,5 @@
 </body>
 
 </html>
+
 
