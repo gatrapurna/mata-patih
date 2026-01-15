@@ -251,7 +251,7 @@
     }
     getGPS();
 
-    // --- SCANNER LOGIC (HD & BARCODE FIX) ---
+    // --- SCANNER LOGIC (HD + BACK CAMERA FIXED) ---
     const btnScan = document.getElementById('btnScan');
     let isScanning = false;
 
@@ -259,15 +259,17 @@
       if (!isScanning) {
         document.getElementById('reader').style.display = 'block';
         
-        // 1. ARGUMEN KEDUA: CONFIG (HD Settings masuk sini)
+        // 1. CONFIGURATION (ARGUMEN KEDUA)
         const config = { 
           fps: 10,
           // Box dipipihkan agar user memposisikan barcode secara horizontal
           qrbox: { width: 280, height: 100 }, 
           aspectRatio: 1.0,
           
-          // SETTINGAN HD DIPINDAH KE SINI (Benar)
+          // VIDEO CONSTRAINTS: SETTINGAN HD & ARAH KAMERA
           videoConstraints: {
+              // DOUBLE LOCK: Pastikan environment dipilih di sini juga
+              facingMode: "environment", 
               width: { min: 640, ideal: 1280, max: 1920 },
               height: { min: 480, ideal: 720, max: 1080 },
               focusMode: "continuous"
@@ -284,7 +286,7 @@
           ]
         };
 
-        // 2. ARGUMEN PERTAMA: CAMERA SELECTOR (Strictly one key)
+        // 2. CAMERA SELECTOR (ARGUMEN PERTAMA - STRICTLY ONE KEY)
         const cameraSelector = { facingMode: "environment" };
 
         html5QrCode.start(
