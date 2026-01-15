@@ -171,7 +171,7 @@
 
   <div class="container">
     <div class="header">
-      <h1>P.A.T.I.H V9.5</h1>
+      <h1>P.A.T.I.H V9.6</h1>
       <p>Protocol Autonomous Technical Inventory Handler</p>
     </div>
 
@@ -226,7 +226,6 @@
 
   <script>
     // --- CONFIGURATION ---
-    // Pastikan URL ini sesuai dengan Production URL n8n Anda
     const N8N_WEBHOOK_URL = "https://n8ring.gatrapurna.my.id/webhook/patih-v9/brain";
 
     const tg = window.Telegram.WebApp;
@@ -252,65 +251,66 @@
     }
     getGPS();
 
-   // --- SCANNER LOGIC (HD OPTIMIZED) ---
-  const btnScan = document.getElementById('btnScan');
-  let isScanning = false;
+    // --- SCANNER LOGIC (HD & BARCODE FIX) ---
+    const btnScan = document.getElementById('btnScan');
+    let isScanning = false;
 
-  btnScan.addEventListener('click', () => {
-    if (!isScanning) {
-      document.getElementById('reader').style.display = 'block';
-      
-      // 1. KONFIGURASI SCANNER (Software)
-      const config = { 
-        fps: 10,
-        // Box sedikit lebih besar agar user lebih leluasa
-        qrbox: { width: 280, height: 150 }, 
-        aspectRatio: 1.0,
-        // Experimental Features tetap ON
-        experimentalFeatures: {
-            useBarCodeDetectorIfSupported: true
-        },
-        formatsToSupport: [ 
-            Html5QrcodeSupportedFormats.QR_CODE,
-            Html5QrcodeSupportedFormats.CODE_128, 
-            Html5QrcodeSupportedFormats.CODE_39,
-            Html5QrcodeSupportedFormats.EAN_13
-        ]
-      };
+    btnScan.addEventListener('click', () => {
+      if (!isScanning) {
+        document.getElementById('reader').style.display = 'block';
+        
+        // 1. ARGUMEN KEDUA: CONFIG (HD Settings masuk sini)
+        const config = { 
+          fps: 10,
+          // Box dipipihkan agar user memposisikan barcode secara horizontal
+          qrbox: { width: 280, height: 100 }, 
+          aspectRatio: 1.0,
+          
+          // SETTINGAN HD DIPINDAH KE SINI (Benar)
+          videoConstraints: {
+              width: { min: 640, ideal: 1280, max: 1920 },
+              height: { min: 480, ideal: 720, max: 1080 },
+              focusMode: "continuous"
+          },
 
-      // 2. KONFIGURASI KAMERA (Hardware) - INI KUNCINYA
-      const cameraConfig = { 
-        facingMode: "environment",
-        // PAKSA RESOLUSI TINGGI (HD) AGAR BARCODE JELAS
-        width: { min: 640, ideal: 1280, max: 1920 },
-        height: { min: 480, ideal: 720, max: 1080 },
-        focusMode: "continuous" // Mencoba autofocus terus menerus
-      };
+          experimentalFeatures: {
+              useBarCodeDetectorIfSupported: true
+          },
+          formatsToSupport: [ 
+              Html5QrcodeSupportedFormats.QR_CODE,
+              Html5QrcodeSupportedFormats.CODE_128, 
+              Html5QrcodeSupportedFormats.CODE_39,
+              Html5QrcodeSupportedFormats.EAN_13
+          ]
+        };
 
-      html5QrCode.start(
-        cameraConfig, 
-        config,
-        (decodedText, decodedResult) => {
-          // Success Scan
-          document.getElementById('sku').value = decodedText;
-          stopScanner();
-          tg.HapticFeedback.notificationOccurred('success');
-        },
-        (errorMessage) => {
-          // Scanning...
-        }
-      ).catch(err => {
-        alert("Kamera error: " + err);
-        btnScan.innerText = "📷 Scan Barcode/QR";
-        isScanning = false;
-      });
-      
-      btnScan.innerText = "❌ Stop Camera";
-      isScanning = true;
-    } else {
-      stopScanner();
-    }
-  });
+        // 2. ARGUMEN PERTAMA: CAMERA SELECTOR (Strictly one key)
+        const cameraSelector = { facingMode: "environment" };
+
+        html5QrCode.start(
+          cameraSelector, 
+          config,
+          (decodedText, decodedResult) => {
+            // Success Scan
+            document.getElementById('sku').value = decodedText;
+            stopScanner();
+            tg.HapticFeedback.notificationOccurred('success');
+          },
+          (errorMessage) => {
+            // Scanning...
+          }
+        ).catch(err => {
+          alert("Kamera error: " + err);
+          btnScan.innerText = "📷 Scan Barcode/QR";
+          isScanning = false;
+        });
+        
+        btnScan.innerText = "❌ Stop Camera";
+        isScanning = true;
+      } else {
+        stopScanner();
+      }
+    });
 
     function stopScanner() {
       html5QrCode.stop().then(() => {
@@ -346,7 +346,7 @@
         formData.append('username', tg.initDataUnsafe.user.username || 'NoUsername');
       }
 
-      // Photo File (Keep logic just in case, though hidden)
+      // Photo File logic (Hidden but kept)
       const fileInput = document.getElementById('photo');
       if (fileInput.files.length > 0) {
         formData.append('photo', fileInput.files[0]);
@@ -388,7 +388,4 @@
   </script>
 
 </body>
-
 </html>
-
-
