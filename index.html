@@ -260,17 +260,27 @@
       if (!isScanning) {
         document.getElementById('reader').style.display = 'block';
 
-        // KONFIGURASI BARU: Support QR + Barcode (SN)
-        const config = {
-          fps: 10,
-          qrbox: { width: 250, height: 150 }, // Kotak lebih lebar untuk barcode panjang
-          formatsToSupport: [
+       // --- UPDATE BAGIAN INI DI SCRIPT ---
+      
+      const config = { 
+        fps: 10, 
+        // UBAH GEOMETRI: Lebih lebar, kurang tinggi (Persegi Panjang)
+        qrbox: { width: 280, height: 100 }, 
+        aspectRatio: 1.0,
+        
+        // FITUR BARU: Gunakan Hardware HP jika ada (Super Cepat)
+        experimentalFeatures: {
+            useBarCodeDetectorIfSupported: true
+        },
+        
+        // SUPPORT FORMAT LENGKAP
+        formatsToSupport: [ 
             Html5QrcodeSupportedFormats.QR_CODE,
-            Html5QrcodeSupportedFormats.CODE_128, // Standard SN
+            Html5QrcodeSupportedFormats.CODE_128, // Serial Number (Paling Umum)
             Html5QrcodeSupportedFormats.CODE_39,
             Html5QrcodeSupportedFormats.EAN_13
-          ]
-        };
+        ]
+      };
 
         html5QrCode.start(
           { facingMode: "environment" },
@@ -375,3 +385,4 @@
 </body>
 
 </html>
+
