@@ -138,6 +138,25 @@
       margin-bottom: 10px;
       width: 100%;
     }
+    
+    /* Photo Upload Button Style */
+    .photo-upload-wrapper {
+      position: relative;
+      overflow: hidden;
+      display: inline-block;
+      width: 100%;
+    }
+    
+    .photo-input-ghost {
+      font-size: 100px;
+      position: absolute;
+      left: 0;
+      top: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
 
     /* Feedback */
     .status {
@@ -160,10 +179,6 @@
       color: var(--danger);
       border: 1px solid var(--danger);
     }
-
-    .hidden {
-      display: none !important;
-    }
   </style>
 </head>
 
@@ -171,8 +186,8 @@
 
   <div class="container">
     <div class="header">
-      <h1>P.A.T.I.H V9.6</h1>
-      <p>Protocol Autonomous Technical Inventory Handler</p>
+      <h1>P.A.T.I.H V9.7</h1>
+      <p>Protocol Agent for Telco Intelligence Hive</p>
     </div>
 
     <div id="reader"></div>
@@ -208,16 +223,22 @@
         <textarea id="note" rows="2" placeholder="ODP, No. Tiket, atau Keterangan..."></textarea>
       </div>
 
-      <div style="display:none;">
-        <label>Bukti Foto (Opsional)</label>
-        <input type="file" id="photo" accept="image/*" capture="environment" />
+      <div style="margin-top: 15px;">
+        <label>Bukti Foto (Wajib)</label>
+        <div class="photo-upload-wrapper">
+          <button type="button" class="btn btn-secondary" style="width: 100%; border: 1px dashed #94a3b8; background: #334155;">
+            📸 Ambil / Upload Foto
+          </button>
+          <input type="file" id="photo" class="photo-input-ghost" accept="image/*" capture="environment" required 
+                 onchange="updatePhotoLabel(this)" />
+        </div>
+        <div id="photo-label" style="font-size: 12px; color: var(--success); margin-top: 8px; text-align: center; font-weight: bold;">
+          ⚠️ Belum ada foto dipilih
+        </div>
       </div>
-      <p style="font-size:12px; color:#fbbf24; text-align:center;">
-        📸 Info: Foto bukti dikirim lewat Chat Telegram setelah klik tombol Kirim Data.
-      </p>
 
       <button type="submit" id="btnSubmit" class="btn btn-primary" style="margin-top: 20px; width: 100%;">
-        🚀 KIRIM DATA
+        🚀 KIRIM DATA LENGKAP
       </button>
 
       <div id="statusBox" class="status"></div>
@@ -236,6 +257,18 @@
     tg.ready();
     tg.expand();
 
+    // --- PHOTO FEEDBACK ---
+    function updatePhotoLabel(input) {
+      const label = document.getElementById('photo-label');
+      if (input.files && input.files[0]) {
+        label.innerText = "✅ FOTO SIAP: " + input.files[0].name;
+        label.style.color = "#10b981"; // Success Green
+      } else {
+        label.innerText = "⚠️ Belum ada foto dipilih";
+        label.style.color = "#fbbf24"; // Warning Yellow
+      }
+    }
+
     // --- GPS LOGIC ---
     function getGPS() {
       if (navigator.geolocation) {
@@ -251,7 +284,7 @@
     }
     getGPS();
 
-    // --- SCANNER LOGIC (HD + BACK CAMERA FIXED) ---
+    // --- SCANNER LOGIC (HD FIXED V9.6) ---
     const btnScan = document.getElementById('btnScan');
     let isScanning = false;
 
@@ -259,25 +292,17 @@
       if (!isScanning) {
         document.getElementById('reader').style.display = 'block';
         
-        // 1. CONFIGURATION (ARGUMEN KEDUA)
         const config = { 
           fps: 10,
-          // Box dipipihkan agar user memposisikan barcode secara horizontal
           qrbox: { width: 280, height: 100 }, 
           aspectRatio: 1.0,
-          
-          // VIDEO CONSTRAINTS: SETTINGAN HD & ARAH KAMERA
           videoConstraints: {
-              // DOUBLE LOCK: Pastikan environment dipilih di sini juga
               facingMode: "environment", 
               width: { min: 640, ideal: 1280, max: 1920 },
               height: { min: 480, ideal: 720, max: 1080 },
               focusMode: "continuous"
           },
-
-          experimentalFeatures: {
-              useBarCodeDetectorIfSupported: true
-          },
+          experimentalFeatures: { useBarCodeDetectorIfSupported: true },
           formatsToSupport: [ 
               Html5QrcodeSupportedFormats.QR_CODE,
               Html5QrcodeSupportedFormats.CODE_128, 
@@ -286,21 +311,16 @@
           ]
         };
 
-        // 2. CAMERA SELECTOR (ARGUMEN PERTAMA - STRICTLY ONE KEY)
         const cameraSelector = { facingMode: "environment" };
 
         html5QrCode.start(
-          cameraSelector, 
-          config,
+          cameraSelector, config,
           (decodedText, decodedResult) => {
-            // Success Scan
             document.getElementById('sku').value = decodedText;
             stopScanner();
             tg.HapticFeedback.notificationOccurred('success');
           },
-          (errorMessage) => {
-            // Scanning...
-          }
+          (errorMessage) => {}
         ).catch(err => {
           alert("Kamera error: " + err);
           btnScan.innerText = "📷 Scan Barcode/QR";
@@ -322,14 +342,21 @@
       }).catch(err => console.log(err));
     }
 
-    // --- SUBMIT LOGIC ---
+    // --- SUBMIT LOGIC (UPDATED V9.7) ---
     document.getElementById('patihForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = document.getElementById('btnSubmit');
       const statusBox = document.getElementById('statusBox');
+      const fileInput = document.getElementById('photo');
+
+      // Validasi Foto
+      if (fileInput.files.length === 0) {
+        alert("Mohon ambil foto bukti terlebih dahulu!");
+        return;
+      }
 
       btn.disabled = true;
-      btn.innerText = "Mengirim...";
+      btn.innerText = "Mengupload Data & Foto...";
       statusBox.style.display = 'none';
 
       // Prepare Data
@@ -341,17 +368,14 @@
       formData.append('note', document.getElementById('note').value);
       formData.append('lat', lat || '');
       formData.append('lng', lng || '');
+      
+      // Append Photo (Critical)
+      formData.append('photo', fileInput.files[0]);
 
       // Telegram User Data
       if (tg.initDataUnsafe?.user) {
         formData.append('chat_id', tg.initDataUnsafe.user.id);
         formData.append('username', tg.initDataUnsafe.user.username || 'NoUsername');
-      }
-
-      // Photo File logic (Hidden but kept)
-      const fileInput = document.getElementById('photo');
-      if (fileInput.files.length > 0) {
-        formData.append('photo', fileInput.files[0]);
       }
 
       try {
@@ -363,17 +387,18 @@
         const result = await response.json();
 
         if (response.ok) {
-          statusBox.innerText = "✅ Data Berhasil Disimpan!";
+          statusBox.innerText = "✅ Transaksi Selesai!";
           statusBox.className = "status success";
           statusBox.style.display = 'block';
           tg.HapticFeedback.notificationOccurred('success');
 
-          // Reset form partial
+          // Clean Reset
           document.getElementById('sku').value = '';
           document.getElementById('note').value = '';
           document.getElementById('photo').value = '';
+          updatePhotoLabel(document.getElementById('photo'));
 
-          setTimeout(() => { tg.close(); }, 2000);
+          setTimeout(() => { tg.close(); }, 2500);
         } else {
           throw new Error(result.message || "Server Reject");
         }
@@ -384,7 +409,7 @@
         tg.HapticFeedback.notificationOccurred('error');
       } finally {
         btn.disabled = false;
-        btn.innerText = "🚀 KIRIM DATA";
+        btn.innerText = "🚀 KIRIM DATA LENGKAP";
       }
     });
   </script>
