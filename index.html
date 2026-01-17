@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>P.A.T.I.H V1.1 — Ops</title>
+    <title>P.A.T.I.H V1.2 — Smart Ops</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -11,36 +11,35 @@
         :root { --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --accent: #3b82f6; --success: #10b981; --warning: #f59e0b; --border: #334155; }
         body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; padding: 15px; }
         .card { background: var(--card); border-radius: 16px; padding: 20px; border: 1px solid var(--border); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
-        
         label { display: block; margin-bottom: 8px; color: #94a3b8; font-size: 0.85rem; font-weight: 600; }
         select, input, textarea { width: 100%; padding: 12px; background: var(--bg); border: 1px solid var(--border); color: white; border-radius: 10px; box-sizing: border-box; font-size: 15px; margin-bottom: 15px; }
         select:focus, input:focus { border-color: var(--accent); outline: none; }
-
-        /* UI KAMERA LANGSUNG */
+        
+        /* UI KAMERA (OPTIONAL STYLE) */
         .camera-wrapper {
-            position: relative; width: 100%; height: 100px;
-            background: rgba(59, 130, 246, 0.1); border: 2px dashed var(--accent);
+            position: relative; width: 100%; height: 80px;
+            background: rgba(59, 130, 246, 0.05); border: 2px dashed #475569;
             border-radius: 12px; display: flex; align-items: center; justify-content: center;
-            overflow: hidden; margin-bottom: 15px; transition: all 0.3s;
+            overflow: hidden; margin-bottom: 5px; transition: all 0.3s;
         }
         .camera-wrapper.has-file { border-style: solid; border-color: var(--success); background: rgba(16, 185, 129, 0.1); }
-        .camera-label { display: flex; flex-direction: column; align-items: center; color: var(--accent); font-weight: bold; font-size: 0.9rem; pointer-events: none; }
-        .camera-label i { font-size: 2rem; margin-bottom: 5px; }
+        .camera-label { display: flex; flex-direction: column; align-items: center; color: #94a3b8; font-size: 0.8rem; pointer-events: none; }
         .direct-cam-input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10; }
+        .optional-badge { font-size: 10px; background: #334155; padding: 2px 6px; border-radius: 4px; color: #cbd5e1; margin-left: 5px; }
 
-        /* TOMBOL LAIN */
         .btn-scan { width: 100%; padding: 12px; border-radius: 10px; border: none; background: var(--warning); color: #0f172a; font-weight: bold; margin-bottom: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-submit { width: 100%; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; margin-top: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .btn-submit:disabled { background: var(--border); cursor: not-allowed; }
         #reader { width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 15px; display: none; border: 2px solid var(--warning); }
         .status-msg { text-align: center; font-size: 0.9rem; margin-top: 10px; display: none; padding: 10px; border-radius: 8px; }
         .success { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        optgroup { color: var(--accent); background: var(--card); font-weight: bold; }
     </style>
 </head>
 <body>
     <div style="text-align: center; margin-bottom: 15px;">
-        <h2 style="margin:0; color: var(--accent); letter-spacing: 1px;">P.A.T.I.H V1.1</h2>
-        <p style="margin:2px 0 0; font-size: 0.75rem; color: #64748b;">G.A.S Universe Operations</p>
+        <h2 style="margin:0; color: var(--accent); letter-spacing: 1px;">P.A.T.I.H V1.2</h2>
+        <p style="margin:2px 0 0; font-size: 0.75rem; color: #64748b;">Platform Aset & Tiketing Intelligent Hive</p>
     </div>
 
     <div class="card">
@@ -56,32 +55,36 @@
 
             <label><i class="fas fa-box"></i> Identitas Aset (SKU)</label>
             <button type="button" id="btnScan" class="btn-scan"><i class="fas fa-qrcode"></i> SCAN BARCODE</button>
+            
             <select id="sku_dropdown" onchange="syncSku(this.value)" required>
                 <option value="">⏳ Menghubungkan Neural Core...</option>
             </select>
-            
+
             <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 10px;">
                 <div><label>Qty</label><input type="number" id="qty" value="1" min="1" required></div>
                 <div><label>GPS</label><input type="text" id="gps" placeholder="Mencari Satelit..." readonly style="font-size: 12px; color: #fbbf24;"></div>
             </div>
 
-            <label><i class="fas fa-camera"></i> Bukti Foto</label>
+            <label><i class="fas fa-camera"></i> Bukti Foto <span class="optional-badge">OPSIONAL</span></label>
             <div class="camera-wrapper" id="camWrap">
-                <div class="camera-label" id="camLabel"><i class="fas fa-camera-retro"></i><span>Ketuk Buka Kamera</span></div>
-                <input type="file" id="photo" class="direct-cam-input" accept="image/*" capture="environment" required onchange="previewPhoto(this)">
+                <div class="camera-label" id="camLabel">
+                    <i class="fas fa-camera-retro" style="font-size: 1.5rem; margin-bottom: 5px;"></i>
+                    <span>Ketuk untuk Foto (Bisa disusulkan)</span>
+                </div>
+                <input type="file" id="photo" class="direct-cam-input" accept="image/*" capture="environment" onchange="previewPhoto(this)">
             </div>
 
             <label>Catatan</label>
             <textarea id="note" rows="2" placeholder="No. Tiket / ODP"></textarea>
+            
             <button type="submit" id="btnSubmit" class="btn-submit"><i class="fas fa-paper-plane"></i> KIRIM LAPORAN</button>
             <div id="statusBox" class="status-msg"></div>
         </form>
     </div>
 
     <script>
-        // --- GANTI URL INI DENGAN URL WEBHOOK N8N ANDA ---
-        // Contoh: "https://n8ring.gatrapurna.my.id/webhook"
-        const N8N_HOST = "GANTI_DENGAN_URL_WEBHOOK_ANDA_YANG_BENAR"; 
+        // --- CONFIG ---
+        const N8N_HOST = "https://n8ring.gatrapurna.my.id/webhook"; // Pastikan ini benar!
         
         const tg = window.Telegram.WebApp;
         const html5QrCode = new Html5Qrcode("reader");
@@ -89,19 +92,38 @@
 
         tg.ready(); tg.expand();
 
-        // 1. Fetch Data SKU
+        // 1. FETCH SKU LIST WITH CATEGORY GROUPING
         fetch(`${N8N_HOST}/get-sku-list`)
             .then(res => res.json())
             .then(data => {
                 const sel = document.getElementById('sku_dropdown');
                 sel.innerHTML = '<option value="">-- Pilih Aset --</option>';
-                data.forEach(i => {
-                    const opt = document.createElement('option');
-                    opt.value = i.sku; opt.textContent = `${i.name} [${i.sku}]`;
-                    sel.appendChild(opt);
+                
+                // Grouping Logic
+                const grouped = {};
+                data.forEach(item => {
+                    const cat = item.category || 'UMUM';
+                    if(!grouped[cat]) grouped[cat] = [];
+                    grouped[cat].push(item);
                 });
+
+                // Create Optgroups
+                for (const [category, items] of Object.entries(grouped)) {
+                    const group = document.createElement('optgroup');
+                    group.label = category.toUpperCase();
+                    items.forEach(i => {
+                        const opt = document.createElement('option');
+                        opt.value = i.sku;
+                        opt.textContent = `${i.name} [${i.sku}]`;
+                        group.appendChild(opt);
+                    });
+                    sel.appendChild(group);
+                }
             })
-            .catch(() => document.getElementById('sku_dropdown').innerHTML = '<option>❌ Gagal Load Data</option>');
+            .catch(err => {
+                console.error(err);
+                document.getElementById('sku_dropdown').innerHTML = '<option value="">❌ Gagal Load Data (Cek N8N)</option>';
+            });
 
         // 2. GPS
         navigator.geolocation.getCurrentPosition(
@@ -109,14 +131,12 @@
             () => document.getElementById('gps').value = "⚠️ GPS Error"
         );
 
-        // 3. Scanner
+        // 3. Scanner Logic (Sama seperti sebelumnya)
         let isScanning = false;
         document.getElementById('btnScan').onclick = () => {
             if(!isScanning){
                 document.getElementById('reader').style.display='block';
-                html5QrCode.start({facingMode:"environment"}, {fps:10, qrbox:250}, (decoded)=>{
-                    handleScan(decoded); stopScan();
-                }, ()=>{});
+                html5QrCode.start({facingMode:"environment"}, {fps:10, qrbox:250}, (decoded)=>{ handleScan(decoded); stopScan(); }, ()=>{});
                 document.getElementById('btnScan').innerHTML='STOP'; isScanning=true;
             } else stopScan();
         };
@@ -124,52 +144,69 @@
 
         function handleScan(sku){
             const sel = document.getElementById('sku_dropdown');
+            // Logic pencarian dalam optgroup
             let found = false;
-            for(let i=0; i<sel.options.length; i++){
-                if(sel.options[i].value === sku){ sel.selectedIndex=i; found=true; break; }
+            const options = sel.getElementsByTagName("option");
+            for(let i=0; i<options.length; i++){
+                if(options[i].value === sku){ options[i].selected = true; found=true; break; }
             }
             if(!found){
-                const opt = document.createElement('option'); opt.value=sku; opt.textContent=`⚠️ BARU: ${sku}`; opt.selected=true; sel.appendChild(opt);
-                tg.showAlert(`SKU Asing: ${sku}\nAkan didaftarkan otomatis.`);
+                // Tambahkan ke kategori 'BARU' jika tidak ada
+                let newGroup = document.querySelector("optgroup[label='BARU/UNKNOWN']");
+                if(!newGroup) {
+                    newGroup = document.createElement('optgroup');
+                    newGroup.label = 'BARU/UNKNOWN';
+                    sel.appendChild(newGroup);
+                }
+                const opt = document.createElement('option'); opt.value=sku; opt.textContent=`⚠️ BARU: ${sku}`; opt.selected=true; 
+                newGroup.appendChild(opt);
+                tg.showAlert(`SKU Asing: ${sku}\nItem ini akan didaftarkan.`);
             }
             tg.HapticFeedback.notificationOccurred('success');
         }
 
-        // 4. Photo Preview
         function previewPhoto(input){
             if(input.files[0]){
-                document.getElementById('camLabel').innerHTML = `<i class="fas fa-check"></i><br>OK: ${input.files[0].name}`;
+                document.getElementById('camLabel').innerHTML = `<i class="fas fa-check" style="color:var(--success)"></i> ${input.files[0].name}`;
                 document.getElementById('camWrap').classList.add('has-file');
             }
         }
 
-        // 5. Submit
+        // 4. SUBMIT (Handling Optional Photo)
         document.getElementById('patihForm').onsubmit = async (e) => {
             e.preventDefault();
             const btn = document.getElementById('btnSubmit');
-            if(!lat) return tg.showAlert("GPS Wajib!");
+            const sku = document.getElementById('sku_dropdown').value;
+            
+            if(!sku) return tg.showAlert("Pilih Barang dulu!");
+            // Tidak ada validasi foto wajib di sini
             
             btn.disabled=true; btn.innerHTML='MENGIRIM...';
             const fd = new FormData();
-            fd.append('sku', document.getElementById('sku_dropdown').value);
+            fd.append('sku', sku);
             fd.append('act', document.getElementById('act').value);
             fd.append('qty', document.getElementById('qty').value);
             fd.append('note', document.getElementById('note').value);
-            fd.append('lat', lat); fd.append('lng', lng);
-            fd.append('photo', document.getElementById('photo').files[0]);
+            fd.append('lat', lat || ''); fd.append('lng', lng || '');
             
-            if(tg.initDataUnsafe?.user) fd.append('chat_id', tg.initDataUnsafe.user.id);
+            // Append photo hanya jika ada
+            const file = document.getElementById('photo').files[0];
+            if(file) fd.append('photo', file);
+            
+            if(tg.initDataUnsafe?.user) {
+                fd.append('chat_id', tg.initDataUnsafe.user.id);
+                fd.append('username', tg.initDataUnsafe.user.first_name);
+            }
 
             try {
-                // Pastikan endpoint POST sesuai workflow n8n Anda (misal: /patih-v9/brain)
                 const res = await fetch(`${N8N_HOST}/patih-v9/brain`, { method:'POST', body:fd });
                 const json = await res.json();
                 if(json.status==='success'){
-                    document.getElementById('statusBox').innerHTML="✅ SUKSES!";
-                    document.getElementById('statusBox').className="status-msg success";
-                    document.getElementById('statusBox').style.display='block';
+                    document.getElementById('statusBox').innerHTML = json.message || "✅ DATA DITERIMA!";
+                    document.getElementById('statusBox').className = "status-msg success";
+                    document.getElementById('statusBox').style.display = 'block';
                     tg.HapticFeedback.notificationOccurred('success');
-                    setTimeout(()=>tg.close(), 2000);
+                    setTimeout(()=>tg.close(), 2500);
                 } else throw new Error(json.message);
             } catch(e){
                 tg.showAlert("Gagal: "+e.message); btn.disabled=false; btn.innerHTML='COBA LAGI';
