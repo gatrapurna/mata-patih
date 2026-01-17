@@ -3,44 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>P.A.T.I.H V1.4 — Stable Ops</title>
+    <title>P.A.T.I.H — Intelligent Hive</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* BASE THEME: HIVE DARK MODE */
         :root { --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --accent: #3b82f6; --success: #10b981; --warning: #f59e0b; --border: #334155; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; padding: 15px; }
-        .card { background: var(--card); border-radius: 16px; padding: 20px; border: 1px solid var(--border); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; }
         
-        label { display: block; margin-bottom: 8px; color: #94a3b8; font-size: 0.85rem; font-weight: 600; }
-        /* Fix Dropdown di HP: appearance none dan padding disesuaikan */
-        select, input, textarea { width: 100%; padding: 12px; background: var(--bg); border: 1px solid var(--border); color: white; border-radius: 10px; box-sizing: border-box; font-size: 16px; margin-bottom: 15px; -webkit-appearance: none; appearance: none; }
-        select:focus, input:focus { border-color: var(--accent); outline: none; }
+        /* CARD STYLING */
+        .card { background: var(--card); border-radius: 16px; padding: 20px; border: 1px solid var(--border); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
         
-        /* Custom Arrow untuk Select agar terlihat di HP */
+        /* TYPOGRAPHY & INPUTS */
+        label { display: block; margin-bottom: 8px; color: #94a3b8; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.5px; }
+        select, input, textarea { width: 100%; padding: 12px; background: var(--bg); border: 1px solid var(--border); color: white; border-radius: 8px; box-sizing: border-box; font-size: 16px; margin-bottom: 15px; -webkit-appearance: none; appearance: none; transition: border 0.2s; }
+        select:focus, input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
+        
+        /* CUSTOM UI ELEMENTS */
         .select-wrapper { position: relative; }
-        .select-wrapper::after { content: '\f078'; font-family: 'Font Awesome 6 Free'; font-weight: 900; position: absolute; right: 15px; top: 40px; color: #94a3b8; pointer-events: none; }
+        .select-wrapper::after { content: '\f078'; font-family: 'Font Awesome 6 Free'; font-weight: 900; position: absolute; right: 15px; top: 42px; color: #64748b; pointer-events: none; }
+        
+        #custom_cat_box { display: none; border-left: 3px solid var(--warning); padding-left: 10px; margin-bottom: 15px; animation: fadeIn 0.3s; }
+        
+        /* BUTTONS */
+        .btn-scan { width: 100%; padding: 12px; border-radius: 8px; background: var(--warning); color: #0f172a; font-weight: 700; border: none; cursor: pointer; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.2); }
+        .btn-submit { width: 100%; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 10px; font-weight: 700; font-size: 16px; margin-top: 10px; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3); transition: transform 0.1s; }
+        .btn-submit:active { transform: scale(0.98); }
+        .btn-submit:disabled { background: var(--border); color: #64748b; cursor: not-allowed; box-shadow: none; }
 
-        #custom_cat_box { display: none; border-left: 3px solid var(--warning); padding-left: 10px; margin-bottom: 15px; }
-
-        .btn-scan { width: 100%; padding: 12px; border-radius: 10px; background: var(--warning); color: #0f172a; font-weight: bold; border: none; cursor: pointer; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-submit { width: 100%; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; margin-top: 10px; cursor: pointer; }
-        .btn-submit:disabled { background: var(--border); color: #64748b; }
-
-        .camera-wrapper { position: relative; width: 100%; height: 80px; background: rgba(59, 130, 246, 0.05); border: 2px dashed #475569; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 5px; }
-        .camera-wrapper.has-file { border-color: var(--success); background: rgba(16, 185, 129, 0.1); }
+        /* CAMERA & SCANNER */
+        .camera-wrapper { position: relative; width: 100%; height: 80px; background: rgba(59, 130, 246, 0.05); border: 2px dashed #475569; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 5px; transition: all 0.3s; }
+        .camera-wrapper.has-file { border-color: var(--success); background: rgba(16, 185, 129, 0.1); border-style: solid; }
         .direct-cam-input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
         
         #reader { width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 15px; display: none; border: 2px solid var(--warning); }
-        .status-msg { text-align: center; font-size: 0.9rem; margin-top: 10px; display: none; padding: 10px; border-radius: 8px; }
-        .success { background: rgba(16, 185, 129, 0.2); color: var(--success); }
-        .error { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        
+        /* ALERTS */
+        .status-msg { text-align: center; font-size: 0.9rem; margin-top: 15px; display: none; padding: 12px; border-radius: 8px; font-weight: 500; }
+        .success { background: rgba(16, 185, 129, 0.2); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .error { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
-    <div style="text-align: center; margin-bottom: 15px;">
-        <h2 style="margin:0; color: var(--accent);">P.A.T.I.H V1.4</h2>
-        <p style="margin:2px 0 0; font-size: 0.75rem; color: #64748b;">Platform Aset & Tiketing Intelligent Hive</p>
+    <div style="text-align: center; margin-bottom: 20px; padding-top: 5px;">
+        <h2 style="margin:0; color: var(--accent); font-weight: 800; letter-spacing: 1px;">P.A.T.I.H</h2>
+        <p style="margin:4px 0 0; font-size: 0.8rem; color: #94a3b8; font-weight: 500;">
+            Platform Aset & Tiketing<br>
+            <span style="color: var(--warning); font-size: 0.75rem;">⚡ INTELLIGENT HIVE v1.6</span>
+        </p>
     </div>
 
     <div class="card">
@@ -56,10 +69,10 @@
                 </select>
             </div>
 
-            <label><i class="fas fa-filter"></i> Kategori</label>
+            <label><i class="fas fa-filter"></i> Kategori Aset</label>
             <div class="select-wrapper">
                 <select id="category_select" onchange="filterSku(this.value)" disabled>
-                    <option value="">⏳ Loading Data...</option>
+                    <option value="">⏳ Menghubungkan Hive...</option>
                 </select>
             </div>
             
@@ -78,22 +91,25 @@
                 <div><label>GPS</label><input type="text" id="gps" placeholder="Mencari Satelit..." readonly style="font-size: 12px; color: #fbbf24;"></div>
             </div>
 
-            <label><i class="fas fa-camera"></i> Bukti Foto <span style="font-size:10px; background:#334155; padding:2px 5px; border-radius:3px;">OPSIONAL</span></label>
+            <label><i class="fas fa-camera"></i> Bukti Foto <span style="font-size:10px; background:#334155; padding:2px 6px; border-radius:4px; color:#cbd5e1;">OPSIONAL</span></label>
             <div class="camera-wrapper" id="camWrap">
-                <div id="camLabel" style="color:#94a3b8; font-size:0.8rem;"><i class="fas fa-camera"></i> Ketuk Ambil Foto</div>
+                <div id="camLabel" style="color:#64748b; font-size:0.85rem; text-align:center;">
+                    <i class="fas fa-camera" style="font-size:1.2rem; margin-bottom:5px;"></i><br>Ketuk Ambil Foto
+                </div>
                 <input type="file" id="photo" class="direct-cam-input" accept="image/*" capture="environment" onchange="previewPhoto(this)">
             </div>
 
             <label>Catatan</label>
-            <textarea id="note" rows="2" placeholder="No. Tiket / Keterangan"></textarea>
+            <textarea id="note" rows="2" placeholder="No. Tiket / ODP / Keterangan"></textarea>
             
-            <button type="submit" id="btnSubmit" class="btn-submit"><i class="fas fa-paper-plane"></i> KIRIM DATA</button>
+            <button type="submit" id="btnSubmit" class="btn-submit"><i class="fas fa-paper-plane"></i> KIRIM KE HIVE</button>
             <div id="statusBox" class="status-msg"></div>
         </form>
     </div>
 
     <script>
-        // --- KONFIGURASI URL (PASTIKAN BENAR) ---
+        // --- CONFIGURATION ---
+        // URL Endpoint n8n (Versi V1.6 menggunakan path /patih-v1/)
         const N8N_HOST = "https://n8ring.gatrapurna.my.id/webhook"; 
 
         const tg = window.Telegram.WebApp;
@@ -102,22 +118,22 @@
         let allItems = [];
 
         tg.ready(); tg.expand();
+        tg.MainButton.hide(); 
 
-        // 1. FETCH DATA (Dengan Error Handling Robust)
+        // 1. INIT HIVE DATA (Fetch SKU from Database)
         async function initData() {
             try {
-                // Tambahkan header untuk mencegah cache
-                const res = await fetch(`${N8N_HOST}/get-sku-list`, { 
+                // Perhatikan Path: /patih-v1/sku
+                const res = await fetch(`${N8N_HOST}/patih-v1/sku`, { 
                     method: 'GET',
                     headers: { 'Cache-Control': 'no-cache' }
                 });
                 
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                
+                if (!res.ok) throw new Error("Hive Offline");
                 const data = await res.json();
                 allItems = data;
                 
-                // Populate Kategori
+                // Populate Dropdown Kategori
                 const cats = [...new Set(data.map(i => i.category || 'UMUM'))].sort();
                 const sel = document.getElementById('category_select');
                 sel.innerHTML = '<option value="">-- Pilih Kategori --</option>';
@@ -126,104 +142,108 @@
                     opt.value = c; opt.textContent = c.toUpperCase();
                     sel.appendChild(opt);
                 });
-                // Tambah opsi Lainnya
-                const otherOpt = document.createElement('option');
-                otherOpt.value = "OTHER"; otherOpt.textContent = "➕ LAINNYA (INPUT MANUAL)";
-                sel.appendChild(otherOpt);
                 
-                sel.disabled = false; // Aktifkan dropdown
+                // Tambah Opsi 'Lainnya'
+                const otherOpt = document.createElement('option');
+                otherOpt.value = "OTHER"; otherOpt.textContent = "➕ LAINNYA (MANUAL)";
+                sel.appendChild(otherOpt);
+                sel.disabled = false;
                 
             } catch (err) {
                 console.error(err);
-                document.getElementById('category_select').innerHTML = '<option>❌ Gagal Fetch (Cek Koneksi)</option>';
-                tg.showAlert(`Gagal Load Data: ${err.message}\nPastikan N8N aktif dan CORS diizinkan.`);
+                document.getElementById('category_select').innerHTML = '<option>❌ Gagal Terhubung</option>';
             }
         }
         initData();
 
-        // 2. FILTER SKU
+        // 2. LOGIC FILTER & SCANNER
         window.filterSku = function(category) {
             const skuInput = document.getElementById('sku_input');
             const customBox = document.getElementById('custom_cat_box');
             const dl = document.getElementById('sku_list');
-            
-            dl.innerHTML = ''; // Reset list
+            dl.innerHTML = ''; 
 
             if (category === 'OTHER') {
                 customBox.style.display = 'block';
                 document.getElementById('custom_category').required = true;
-                skuInput.placeholder = "Ketik Nama Barang Baru...";
+                skuInput.placeholder = "Ketik SKU Baru...";
             } else {
                 customBox.style.display = 'none';
                 document.getElementById('custom_category').required = false;
                 skuInput.placeholder = "Pilih / Scan Barang...";
-                
-                // Isi Datalist sesuai kategori
+                // Filter Datalist sesuai kategori
                 const filtered = allItems.filter(i => (i.category || 'UMUM') == category);
                 filtered.forEach(i => {
                     const opt = document.createElement('option');
-                    opt.value = i.sku;
-                    opt.textContent = `${i.name}`;
-                    dl.appendChild(opt);
+                    opt.value = i.sku; opt.textContent = `${i.name}`; dl.appendChild(opt);
                 });
             }
         };
 
-        // 3. SCANNER LOGIC
+        // Scanner QR Logic
         let isScanning = false;
         document.getElementById('btnScan').onclick = () => {
             if(!isScanning){
                 document.getElementById('reader').style.display='block';
                 html5QrCode.start({facingMode:"environment"}, {fps:10, qrbox:250}, (decoded)=>{ handleScan(decoded); stopScan(); }, ()=>{});
-                document.getElementById('btnScan').innerHTML='STOP'; document.getElementById('btnScan').style.background='#ef4444'; isScanning=true;
+                document.getElementById('btnScan').innerHTML='STOP SCAN'; document.getElementById('btnScan').style.background='#ef4444'; isScanning=true;
             } else stopScan();
         };
         function stopScan(){ html5QrCode.stop().then(()=>{ document.getElementById('reader').style.display='none'; document.getElementById('btnScan').innerHTML='<i class="fas fa-qrcode"></i> SCAN BARCODE'; document.getElementById('btnScan').style.background='#f59e0b'; isScanning=false; }); }
-
+        
         function handleScan(code) {
             document.getElementById('sku_input').value = code;
-            
-            // Auto Detect Kategori
+            // Cek apakah SKU ada di database lokal
             const found = allItems.find(i => i.sku === code);
             if (found) {
                 document.getElementById('category_select').value = found.category || 'UMUM';
                 filterSku(found.category || 'UMUM'); 
                 tg.HapticFeedback.notificationOccurred('success');
             } else {
-                tg.showAlert("Item Baru. Silakan pilih kategori manual.");
+                tg.showAlert("Aset Tidak Dikenal. Pilih kategori manual."); 
                 document.getElementById('category_select').focus();
             }
         }
 
-        // 4. GPS & PHOTO
-        navigator.geolocation.getCurrentPosition(p => { lat=p.coords.latitude; lng=p.coords.longitude; document.getElementById('gps').value=`${lat.toFixed(5)}, ${lng.toFixed(5)}`; }, ()=>document.getElementById('gps').value="⚠️ GPS Error");
+        // 3. GPS & CAMERA UTILS
+        navigator.geolocation.getCurrentPosition(
+            p => { lat=p.coords.latitude; lng=p.coords.longitude; document.getElementById('gps').value=`${lat.toFixed(5)}, ${lng.toFixed(5)}`; }, 
+            () => document.getElementById('gps').value="⚠️ GPS Off / Error"
+        );
         
         window.previewPhoto = function(input) {
-            if(input.files[0]) {
-                document.getElementById('camLabel').innerHTML = `<i class="fas fa-check" style="color:#10b981"></i> Siap Upload`;
-                document.getElementById('camWrap').classList.add('has-file');
+            if(input.files[0]) { 
+                document.getElementById('camLabel').innerHTML = `<i class="fas fa-check-circle" style="color:#10b981; font-size:1.5rem"></i><br>Foto Oke`; 
+                document.getElementById('camWrap').classList.add('has-file'); 
             }
         }
 
-        // 5. SUBMIT
+        // 4. SUBMIT TO HIVE (MAIN LOGIC)
         document.getElementById('patihForm').onsubmit = async (e) => {
             e.preventDefault();
             const btn = document.getElementById('btnSubmit');
             const sku = document.getElementById('sku_input').value;
             let cat = document.getElementById('category_select').value;
             
+            // Handle Kategori Manual
             if(cat === 'OTHER') cat = document.getElementById('custom_category').value.toUpperCase();
-            if(!cat) return tg.showAlert("Pilih Kategori Dulu!");
-            if(!sku) return tg.showAlert("SKU Wajib Diisi!");
-
-            btn.disabled=true; btn.innerHTML='MENGIRIM...';
             
+            // Validasi Sederhana
+            if(!cat || !sku) return tg.showAlert("Data Aset Belum Lengkap!");
+
+            // UI Loading
+            btn.disabled=true; btn.innerHTML='MENGIRIM KE HIVE...';
+            
+            // Siapkan Data
             const fd = new FormData();
-            fd.append('sku', sku); fd.append('category', cat);
+            fd.append('sku', sku); 
+            fd.append('category', cat);
             fd.append('act', document.getElementById('act').value);
             fd.append('qty', document.getElementById('qty').value);
             fd.append('note', document.getElementById('note').value);
-            fd.append('lat', lat||''); fd.append('lng', lng||'');
+            fd.append('lat', lat||''); // Handle GPS kosong agar tidak error di backend
+            fd.append('lng', lng||'');
+            
             if(document.getElementById('photo').files[0]) fd.append('photo', document.getElementById('photo').files[0]);
             
             if(tg.initDataUnsafe?.user) {
@@ -232,18 +252,27 @@
             }
 
             try {
-                const res = await fetch(`${N8N_HOST}/patih-v9/brain`, { method:'POST', body:fd });
+                // Perhatikan Path: /patih-v1/brain
+                const res = await fetch(`${N8N_HOST}/patih-v1/brain`, { method:'POST', body:fd });
                 const json = await res.json();
-                if(json.status==='success'){
-                    document.getElementById('statusBox').innerHTML = json.message;
+                
+                if(json.status === 'success'){
+                    // LOGIC V1.6 COMPLIANT (Fix Undefined Message)
+                    const msg = json.message || json.response_message || "✅ Data Tersimpan di Hive!";
+                    
+                    document.getElementById('statusBox').innerHTML = msg;
                     document.getElementById('statusBox').className = "status-msg success";
                     document.getElementById('statusBox').style.display = 'block';
                     tg.HapticFeedback.notificationOccurred('success');
+                    
+                    // Tutup Aplikasi setelah 2.5 detik
                     setTimeout(()=>tg.close(), 2500);
-                } else throw new Error(json.message || "Server Error");
+                } else throw new Error(json.message);
             } catch(e) {
-                tg.showAlert("Gagal: "+e.message);
-                btn.disabled=false; btn.innerHTML='KIRIM DATA';
+                document.getElementById('statusBox').innerHTML = "Gagal: "+e.message;
+                document.getElementById('statusBox').className = "status-msg error";
+                document.getElementById('statusBox').style.display = 'block';
+                btn.disabled=false; btn.innerHTML='KIRIM KE HIVE';
             }
         };
     </script>
