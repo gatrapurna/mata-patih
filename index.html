@@ -1,419 +1,370 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
 
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-  <title>P.A.T.I.H — Intelligent Ops</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-  <style>
-    :root {
-      --bg-color: #0f172a;
-      --card-bg: #1e293b;
-      --input-bg: #334155;
-      --accent: #3b82f6;
-      --text: #f1f5f9;
-      --danger: #ef4444;
-      --success: #10b981;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>P.A.T.I.H — Intelligent Ops</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            /* Dark Blue Background */
+            --card-bg: #1e293b;
+            /* Card Background */
+            --text-primary: #f8fafc;
+            /* White Text */
+            --text-secondary: #94a3b8;
+            /* Grey Text */
+            --accent: #3b82f6;
+            /* Blue Accent */
+            --accent-hover: #2563eb;
+            --danger: #ef4444;
+            --success: #10b981;
+            --border: #334155;
+        }
 
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text);
-      -webkit-font-smoothing: antialiased;
-    }
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 20px;
+            -webkit-font-smoothing: antialiased;
+        }
 
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 20px;
-    }
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
 
-    /* Header */
-    .header {
-      text-align: center;
-      margin-bottom: 24px;
-    }
+        .header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            letter-spacing: 2px;
+            color: var(--accent);
+        }
 
-    .header h1 {
-      margin: 0;
-      font-size: 22px;
-      font-weight: 700;
-      background: linear-gradient(90deg, #60a5fa, #a78bfa);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
+        .header p {
+            margin: 5px 0 0;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
 
-    .header p {
-      font-size: 13px;
-      opacity: 0.7;
-      margin-top: 5px;
-    }
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
 
-    /* Cards */
-    .card {
-      background: var(--card-bg);
-      border-radius: 16px;
-      padding: 20px;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-      margin-bottom: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }
+        .form-group {
+            margin-bottom: 20px;
+        }
 
-    /* Form Elements */
-    label {
-      display: block;
-      font-size: 12px;
-      font-weight: 600;
-      margin-bottom: 6px;
-      color: #94a3b8;
-    }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
 
-    input,
-    select,
-    textarea {
-      width: 100%;
-      background: var(--input-bg);
-      border: 1px solid transparent;
-      color: white;
-      padding: 12px;
-      border-radius: 10px;
-      font-size: 14px;
-      box-sizing: border-box;
-      outline: none;
-      transition: all 0.2s;
-    }
+        label i {
+            margin-right: 5px;
+            color: var(--accent);
+        }
 
-    input:focus,
-    select:focus,
-    textarea:focus {
-      border-color: var(--accent);
-    }
+        select,
+        input,
+        textarea {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
 
-    /* Scanner Area */
-    #reader {
-      width: 100%;
-      border-radius: 12px;
-      overflow: hidden;
-      margin-bottom: 15px;
-      display: none;
-    }
+        select:focus,
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
 
-    /* Buttons */
-    .btn-group {
-      display: flex;
-      gap: 10px;
-      margin-top: 10px;
-    }
+        /* Tombol Kamera Kustom */
+        .camera-upload {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
 
-    .btn {
-      flex: 1;
-      padding: 14px;
-      border: none;
-      border-radius: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
+        .camera-btn {
+            border: 2px dashed var(--border);
+            color: var(--text-secondary);
+            background-color: rgba(59, 130, 246, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
 
-    .btn-primary {
-      background: var(--accent);
-      color: white;
-    }
+        .camera-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
 
-    .btn-secondary {
-      background: #475569;
-      color: white;
-    }
+        .camera-btn.uploaded {
+            border-color: var(--success);
+            color: var(--success);
+            background-color: rgba(16, 185, 129, 0.1);
+        }
 
-    .btn-scan {
-      background: #f59e0b;
-      color: #0f172a;
-      margin-bottom: 10px;
-      width: 100%;
-    }
-    
-    /* Photo Upload Button Style */
-    .photo-upload-wrapper {
-      position: relative;
-      overflow: hidden;
-      display: inline-block;
-      width: 100%;
-    }
-    
-    .photo-input-ghost {
-      font-size: 100px;
-      position: absolute;
-      left: 0;
-      top: 0;
-      opacity: 0;
-      cursor: pointer;
-      width: 100%;
-      height: 100%;
-    }
+        input[type="file"] {
+            position: absolute;
+            font-size: 100px;
+            opacity: 0;
+            right: 0;
+            top: 0;
+        }
 
-    /* Feedback */
-    .status {
-      margin-top: 15px;
-      padding: 12px;
-      border-radius: 10px;
-      font-size: 13px;
-      text-align: center;
-      display: none;
-    }
+        button.submit-btn {
+            width: 100%;
+            padding: 16px;
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
 
-    .status.success {
-      background: rgba(16, 185, 129, 0.2);
-      color: var(--success);
-      border: 1px solid var(--success);
-    }
+        button.submit-btn:active {
+            transform: scale(0.98);
+        }
 
-    .status.error {
-      background: rgba(239, 68, 68, 0.2);
-      color: var(--danger);
-      border: 1px solid var(--danger);
-    }
-  </style>
+        button.submit-btn:disabled {
+            background-color: var(--border);
+            color: var(--text-secondary);
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .status-msg {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .status-msg.success {
+            color: var(--success);
+        }
+
+        .status-msg.error {
+            color: var(--danger);
+        }
+    </style>
 </head>
 
 <body>
 
-  <div class="container">
     <div class="header">
-      <h1>P.A.T.I.H V1.0rc</h1>
-      <p>Protocol Agent for Telco Intelligence Hive</p>
+        <h1>P.A.T.I.H</h1>
+        <p>Platform Aset & Tiketing Intelligent Hive</p>
     </div>
 
-    <div id="reader"></div>
+    <div class="container">
+        <div class="card">
+            <form id="laporanForm">
 
-    <form id="patihForm" class="card">
-      <label>Tipe Transaksi</label>
-      <select id="act" required>
-        <option value="Masuk Gudang">📥 Masuk Gudang (Restock)</option>
-        <option value="Keluar Gudang">📤 Keluar Gudang (Usage)</option>
-        <option value="Pasang">🔧 Pasang ke Client</option>
-        <option value="Retur">↩️ Retur Barang</option>
-      </select>
+                <div class="form-group">
+                    <label for="sku"><i class="fas fa-server"></i> Pilih Aset / Material</label>
+                    <select id="sku" name="sku" required>
+                        <option value="">⏳ Menghubungkan ke Neural Core...</option>
+                    </select>
+                </div>
 
-      <div style="margin-top: 15px;">
-        <label>Serial Number / SKU</label>
-        <button type="button" id="btnScan" class="btn btn-scan">📷 Scan Barcode/QR</button>
-        <input id="sku" placeholder="Scan atau ketik manual..." required />
-      </div>
+                <div class="form-group">
+                    <label for="act"><i class="fas fa-exchange-alt"></i> Jenis Tindakan</label>
+                    <select id="act" name="act" required>
+                        <option value="INSTALLED">🏠 PASANG KE USER (Instalasi)</option>
+                        <option value="EX">🟡 TARIK KE GUDANG (Dismantle)</option>
+                        <option value="BROKEN">🔴 RETUR RUSAK (Broken)</option>
+                        <option value="NEW">📦 STOK BARU (Restock)</option>
+                    </select>
+                </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
-        <div>
-          <label>Jumlah</label>
-          <input id="qty" type="number" value="1" min="1" required />
+                <div class="form-group">
+                    <label for="qty"><i class="fas fa-layer-group"></i> Jumlah Unit</label>
+                    <input type="number" id="qty" name="qty" value="1" min="1" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="note"><i class="fas fa-clipboard-list"></i> Catatan Lapangan</label>
+                    <textarea id="note" name="note" rows="2"
+                        placeholder="Contoh: Pasang baru di rumah Bpk Budi (ID: 12345)"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-camera"></i> Bukti Foto</label>
+                    <div class="camera-upload">
+                        <label for="photo" class="camera-btn" id="cameraLabel">
+                            <i class="fas fa-camera-retro"></i> Buka Kamera
+                        </label>
+                        <input type="file" id="photo" name="photo" accept="image/*" capture="environment" required>
+                    </div>
+                </div>
+
+                <input type="hidden" id="chat_id" name="chat_id">
+                <input type="hidden" id="username" name="username">
+                <input type="hidden" id="lat" name="lat">
+                <input type="hidden" id="lng" name="lng">
+
+                <button type="submit" class="submit-btn" id="btnSubmit">
+                    <i class="fas fa-satellite-dish"></i> KIRIM LAPORAN
+                </button>
+
+                <div id="statusBox" class="status-msg"></div>
+
+            </form>
         </div>
-        <div>
-          <label>GPS (Lat, Lng)</label>
-          <input id="gps" placeholder="Auto-detect..." readonly />
-        </div>
-      </div>
+    </div>
 
-      <div style="margin-top: 15px;">
-        <label>Keterangan</label>
-        <textarea id="note" rows="2" placeholder="ODP, No. Tiket, atau Keterangan..."></textarea>
-      </div>
+    <script>
+        // --- KONFIGURASI N8N ---
+        // GANTI URL DI BAWAH INI DENGAN BASE URL WEBHOOK N8N ANDA
+        // Contoh: "https://n8ring.gatrapurna.my.id/webhook/patih-v9/brain"
+        const N8N_BASE_URL = "YOUR_N8N_WEBHOOK_URL_HERE";
 
-      <div style="margin-top: 15px;">
-        <label>Bukti Foto (Wajib)</label>
-        <div class="photo-upload-wrapper">
-          <button type="button" class="btn btn-secondary" style="width: 100%; border: 1px dashed #94a3b8; background: #334155;">
-            📸 Ambil / Upload Foto
-          </button>
-          <input type="file" id="photo" class="photo-input-ghost" accept="image/*" capture="environment" required 
-                 onchange="updatePhotoLabel(this)" />
-        </div>
-        <div id="photo-label" style="font-size: 12px; color: var(--success); margin-top: 8px; text-align: center; font-weight: bold;">
-          ⚠️ Belum ada foto dipilih
-        </div>
-      </div>
+        // Endpoint Turunan (Jangan Diubah jika JSON n8n tidak berubah)
+        const URL_GET_SKU = `${N8N_BASE_URL}/get-sku-list`;
+        const URL_SUBMIT = `${N8N_BASE_URL}/patih-v9/brain`;
 
-      <button type="submit" id="btnSubmit" class="btn btn-primary" style="margin-top: 20px; width: 100%;">
-        🚀 KIRIM DATA LENGKAP
-      </button>
+        // --- INISIALISASI ---
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        const btnSubmit = document.getElementById('btnSubmit');
+        const statusBox = document.getElementById('statusBox');
 
-      <div id="statusBox" class="status"></div>
-    </form>
-  </div>
-
-  <script>
-    // --- CONFIGURATION ---
-    const N8N_WEBHOOK_URL = "https://n8ring.gatrapurna.my.id/webhook/patih-v9/brain";
-
-    const tg = window.Telegram.WebApp;
-    const html5QrCode = new Html5Qrcode("reader");
-    let lat = null, lng = null;
-
-    // Init Telegram
-    tg.ready();
-    tg.expand();
-
-    // --- PHOTO FEEDBACK ---
-    function updatePhotoLabel(input) {
-      const label = document.getElementById('photo-label');
-      if (input.files && input.files[0]) {
-        label.innerText = "✅ FOTO SIAP: " + input.files[0].name;
-        label.style.color = "#10b981"; // Success Green
-      } else {
-        label.innerText = "⚠️ Belum ada foto dipilih";
-        label.style.color = "#fbbf24"; // Warning Yellow
-      }
-    }
-
-    // --- GPS LOGIC ---
-    function getGPS() {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            lat = pos.coords.latitude;
-            lng = pos.coords.longitude;
-            document.getElementById('gps').value = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-          },
-          (err) => { document.getElementById('gps').placeholder = "GPS Error / Denied"; }
-        );
-      }
-    }
-    getGPS();
-
-    // --- SCANNER LOGIC (HD FIXED V9.6) ---
-    const btnScan = document.getElementById('btnScan');
-    let isScanning = false;
-
-    btnScan.addEventListener('click', () => {
-      if (!isScanning) {
-        document.getElementById('reader').style.display = 'block';
-        
-        const config = { 
-          fps: 10,
-          qrbox: { width: 280, height: 100 }, 
-          aspectRatio: 1.0,
-          videoConstraints: {
-              facingMode: "environment", 
-              width: { min: 640, ideal: 1280, max: 1920 },
-              height: { min: 480, ideal: 720, max: 1080 },
-              focusMode: "continuous"
-          },
-          experimentalFeatures: { useBarCodeDetectorIfSupported: true },
-          formatsToSupport: [ 
-              Html5QrcodeSupportedFormats.QR_CODE,
-              Html5QrcodeSupportedFormats.CODE_128, 
-              Html5QrcodeSupportedFormats.CODE_39,
-              Html5QrcodeSupportedFormats.EAN_13
-          ]
-        };
-
-        const cameraSelector = { facingMode: "environment" };
-
-        html5QrCode.start(
-          cameraSelector, config,
-          (decodedText, decodedResult) => {
-            document.getElementById('sku').value = decodedText;
-            stopScanner();
-            tg.HapticFeedback.notificationOccurred('success');
-          },
-          (errorMessage) => {}
-        ).catch(err => {
-          alert("Kamera error: " + err);
-          btnScan.innerText = "📷 Scan Barcode/QR";
-          isScanning = false;
-        });
-        
-        btnScan.innerText = "❌ Stop Camera";
-        isScanning = true;
-      } else {
-        stopScanner();
-      }
-    });
-
-    function stopScanner() {
-      html5QrCode.stop().then(() => {
-        document.getElementById('reader').style.display = 'none';
-        btnScan.innerText = "📷 Scan Barcode/QR";
-        isScanning = false;
-      }).catch(err => console.log(err));
-    }
-
-    // --- SUBMIT LOGIC (UPDATED V9.7) ---
-    document.getElementById('patihForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const btn = document.getElementById('btnSubmit');
-      const statusBox = document.getElementById('statusBox');
-      const fileInput = document.getElementById('photo');
-
-      // Validasi Foto
-      if (fileInput.files.length === 0) {
-        alert("Mohon ambil foto bukti terlebih dahulu!");
-        return;
-      }
-
-      btn.disabled = true;
-      btn.innerText = "Mengupload Data & Foto...";
-      statusBox.style.display = 'none';
-
-      // Prepare Data
-      const formData = new FormData();
-      formData.append('source', 'miniapp_v9');
-      formData.append('act', document.getElementById('act').value);
-      formData.append('sku', document.getElementById('sku').value);
-      formData.append('qty', document.getElementById('qty').value);
-      formData.append('note', document.getElementById('note').value);
-      formData.append('lat', lat || '');
-      formData.append('lng', lng || '');
-      
-      // Append Photo (Critical)
-      formData.append('photo', fileInput.files[0]);
-
-      // Telegram User Data
-      if (tg.initDataUnsafe?.user) {
-        formData.append('chat_id', tg.initDataUnsafe.user.id);
-        formData.append('username', tg.initDataUnsafe.user.username || 'NoUsername');
-      }
-
-      try {
-        const response = await fetch(N8N_WEBHOOK_URL, {
-          method: 'POST',
-          body: formData
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-          statusBox.innerText = "✅ Transaksi Selesai!";
-          statusBox.className = "status success";
-          statusBox.style.display = 'block';
-          tg.HapticFeedback.notificationOccurred('success');
-
-          // Clean Reset
-          document.getElementById('sku').value = '';
-          document.getElementById('note').value = '';
-          document.getElementById('photo').value = '';
-          updatePhotoLabel(document.getElementById('photo'));
-
-          setTimeout(() => { tg.close(); }, 2500);
+        // 1. Identifikasi User Telegram
+        if (tg.initDataUnsafe?.user) {
+            document.getElementById('chat_id').value = tg.initDataUnsafe.user.id;
+            document.getElementById('username').value = tg.initDataUnsafe.user.first_name;
         } else {
-          throw new Error(result.message || "Server Reject");
+            // Debug Mode (Jika dibuka di Browser biasa)
+            console.warn("Mode Debug: Bukan di Telegram");
         }
-      } catch (error) {
-        statusBox.innerText = "❌ Gagal: " + error.message;
-        statusBox.className = "status error";
-        statusBox.style.display = 'block';
-        tg.HapticFeedback.notificationOccurred('error');
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "🚀 KIRIM DATA LENGKAP";
-      }
-    });
-  </script>
+
+        // 2. Load Data SKU dari n8n
+        fetch(URL_GET_SKU)
+            .then(res => res.json())
+            .then(data => {
+                const select = document.getElementById('sku');
+                select.innerHTML = '<option value="">-- Pilih Aset --</option>';
+                data.forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item.sku;
+                    opt.textContent = `${item.name} (${item.sku})`;
+                    select.appendChild(opt);
+                });
+            })
+            .catch(err => {
+                document.getElementById('sku').innerHTML = '<option value="">❌ Gagal Koneksi Server</option>';
+                showStatus("Gagal memuat database SKU. Cek koneksi internet.", "error");
+            });
+
+        // 3. Handle GPS (Wajib)
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                document.getElementById('lat').value = pos.coords.latitude;
+                document.getElementById('lng').value = pos.coords.longitude;
+            },
+            (err) => {
+                showStatus("⚠️ Wajib aktifkan GPS untuk mengirim laporan!", "error");
+                btnSubmit.disabled = true;
+            },
+            { enableHighAccuracy: true }
+        );
+
+        // 4. Visualisasi Upload Foto
+        document.getElementById('photo').addEventListener('change', function (e) {
+            if (this.files[0]) {
+                const label = document.getElementById('cameraLabel');
+                label.innerHTML = `<i class="fas fa-check-circle"></i> Foto Siap: ${this.files[0].name}`;
+                label.classList.add('uploaded');
+            }
+        });
+
+        // 5. Submit Form
+        document.getElementById('laporanForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            // Validasi GPS
+            if (!document.getElementById('lat').value) {
+                tg.showAlert("📍 Sedang mencari lokasi... Tunggu sebentar.");
+                return;
+            }
+
+            // UI Loading
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> MENGIRIM DATA...';
+
+            const formData = new FormData(this);
+
+            try {
+                const response = await fetch(URL_SUBMIT, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    tg.HapticFeedback.notificationOccurred('success');
+                    showStatus("✅ Laporan Berhasil Diterima Pusat!", "success");
+
+                    // Delay sejenak lalu tutup
+                    setTimeout(() => tg.close(), 2000);
+                } else {
+                    throw new Error(result.message || "Server Error");
+                }
+            } catch (error) {
+                tg.HapticFeedback.notificationOccurred('error');
+                showStatus("❌ Gagal: " + error.message, "error");
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = '<i class="fas fa-satellite-dish"></i> KIRIM ULANG';
+            }
+        });
+
+        function showStatus(msg, type) {
+            statusBox.textContent = msg;
+            statusBox.className = "status-msg " + type;
+            statusBox.style.display = "block";
+        }
+    </script>
 
 </body>
-</html>
 
+</html>
