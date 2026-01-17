@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>P.A.T.I.H V1.3 — Smart Ops</title>
+    <title>P.A.T.I.H V1.4 — Stable Ops</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -13,20 +13,23 @@
         .card { background: var(--card); border-radius: 16px; padding: 20px; border: 1px solid var(--border); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
         
         label { display: block; margin-bottom: 8px; color: #94a3b8; font-size: 0.85rem; font-weight: 600; }
-        select, input, textarea { width: 100%; padding: 12px; background: var(--bg); border: 1px solid var(--border); color: white; border-radius: 10px; box-sizing: border-box; font-size: 15px; margin-bottom: 15px; }
+        /* Fix Dropdown di HP: appearance none dan padding disesuaikan */
+        select, input, textarea { width: 100%; padding: 12px; background: var(--bg); border: 1px solid var(--border); color: white; border-radius: 10px; box-sizing: border-box; font-size: 16px; margin-bottom: 15px; -webkit-appearance: none; appearance: none; }
         select:focus, input:focus { border-color: var(--accent); outline: none; }
         
-        /* Custom Category Input (Hidden by default) */
+        /* Custom Arrow untuk Select agar terlihat di HP */
+        .select-wrapper { position: relative; }
+        .select-wrapper::after { content: '\f078'; font-family: 'Font Awesome 6 Free'; font-weight: 900; position: absolute; right: 15px; top: 40px; color: #94a3b8; pointer-events: none; }
+
         #custom_cat_box { display: none; border-left: 3px solid var(--warning); padding-left: 10px; margin-bottom: 15px; }
 
-        /* Camera & Buttons */
-        .camera-wrapper { position: relative; width: 100%; height: 80px; background: rgba(59, 130, 246, 0.05); border: 2px dashed #475569; border-radius: 12px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 5px; }
-        .camera-wrapper.has-file { border-style: solid; border-color: var(--success); background: rgba(16, 185, 129, 0.1); }
-        .direct-cam-input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
-        .optional-badge { font-size: 10px; background: #334155; padding: 2px 6px; border-radius: 4px; color: #cbd5e1; margin-left: 5px; }
-        
         .btn-scan { width: 100%; padding: 12px; border-radius: 10px; background: var(--warning); color: #0f172a; font-weight: bold; border: none; cursor: pointer; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-submit { width: 100%; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; margin-top: 10px; cursor: pointer; }
+        .btn-submit:disabled { background: var(--border); color: #64748b; }
+
+        .camera-wrapper { position: relative; width: 100%; height: 80px; background: rgba(59, 130, 246, 0.05); border: 2px dashed #475569; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 5px; }
+        .camera-wrapper.has-file { border-color: var(--success); background: rgba(16, 185, 129, 0.1); }
+        .direct-cam-input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
         
         #reader { width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 15px; display: none; border: 2px solid var(--warning); }
         .status-msg { text-align: center; font-size: 0.9rem; margin-top: 10px; display: none; padding: 10px; border-radius: 8px; }
@@ -36,7 +39,7 @@
 </head>
 <body>
     <div style="text-align: center; margin-bottom: 15px;">
-        <h2 style="margin:0; color: var(--accent);">P.A.T.I.H V1.3</h2>
+        <h2 style="margin:0; color: var(--accent);">P.A.T.I.H V1.4</h2>
         <p style="margin:2px 0 0; font-size: 0.75rem; color: #64748b;">Platform Aset & Tiketing Intelligent Hive</p>
     </div>
 
@@ -44,18 +47,21 @@
         <div id="reader"></div>
         <form id="patihForm">
             <label><i class="fas fa-exchange-alt"></i> Tipe Transaksi</label>
-            <select id="act" required>
-                <option value="INSTALLED">🏠 PASANG (Instalasi)</option>
-                <option value="EX">🟡 TARIK (Dismantle)</option>
-                <option value="BROKEN">🔴 RETUR (Rusak)</option>
-                <option value="NEW">📦 STOK BARU (Restock)</option>
-            </select>
+            <div class="select-wrapper">
+                <select id="act" required>
+                    <option value="INSTALLED">🏠 PASANG (Instalasi)</option>
+                    <option value="EX">🟡 TARIK (Dismantle)</option>
+                    <option value="BROKEN">🔴 RETUR (Rusak)</option>
+                    <option value="NEW">📦 STOK BARU (Restock)</option>
+                </select>
+            </div>
 
-            <label><i class="fas fa-filter"></i> Kategori Perangkat</label>
-            <select id="category_select" onchange="filterSku(this.value)">
-                <option value="ALL">-- Tampilkan Semua --</option>
-                <option value="OTHER">➕ Lainnya (Input Manual)</option>
-            </select>
+            <label><i class="fas fa-filter"></i> Kategori</label>
+            <div class="select-wrapper">
+                <select id="category_select" onchange="filterSku(this.value)" disabled>
+                    <option value="">⏳ Loading Data...</option>
+                </select>
+            </div>
             
             <div id="custom_cat_box">
                 <input type="text" id="custom_category" placeholder="Tulis Nama Kategori Baru...">
@@ -63,21 +69,18 @@
 
             <button type="button" id="btnScan" class="btn-scan"><i class="fas fa-qrcode"></i> SCAN BARCODE</button>
             
-            <label><i class="fas fa-barcode"></i> Serial Number / SKU</label>
-            <input type="text" id="sku_input" list="sku_list" placeholder="Scan atau Ketik Manual..." required autocomplete="off">
-            <datalist id="sku_list">
-                </datalist>
+            <label><i class="fas fa-barcode"></i> SKU / Serial Number</label>
+            <input type="text" id="sku_input" list="sku_list" placeholder="Pilih Kategori dulu..." required autocomplete="off">
+            <datalist id="sku_list"></datalist>
 
             <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 10px;">
                 <div><label>Qty</label><input type="number" id="qty" value="1" min="1" required></div>
                 <div><label>GPS</label><input type="text" id="gps" placeholder="Mencari Satelit..." readonly style="font-size: 12px; color: #fbbf24;"></div>
             </div>
 
-            <label><i class="fas fa-camera"></i> Bukti Foto <span class="optional-badge">OPSIONAL</span></label>
+            <label><i class="fas fa-camera"></i> Bukti Foto <span style="font-size:10px; background:#334155; padding:2px 5px; border-radius:3px;">OPSIONAL</span></label>
             <div class="camera-wrapper" id="camWrap">
-                <div style="text-align:center; color:#94a3b8; pointer-events:none;" id="camLabel">
-                    <i class="fas fa-camera"></i><br><span style="font-size:10px">Ketuk untuk Foto</span>
-                </div>
+                <div id="camLabel" style="color:#94a3b8; font-size:0.8rem;"><i class="fas fa-camera"></i> Ketuk Ambil Foto</div>
                 <input type="file" id="photo" class="direct-cam-input" accept="image/*" capture="environment" onchange="previewPhoto(this)">
             </div>
 
@@ -90,75 +93,83 @@
     </div>
 
     <script>
-        const N8N_HOST = "https://n8ring.gatrapurna.my.id/webhook"; // Sesuaikan URL
-        
+        // --- KONFIGURASI URL (PASTIKAN BENAR) ---
+        const N8N_HOST = "https://n8ring.gatrapurna.my.id/webhook"; 
+
         const tg = window.Telegram.WebApp;
         const html5QrCode = new Html5Qrcode("reader");
         let lat = null, lng = null;
-        let allItems = []; // Simpan semua data dari server
+        let allItems = [];
 
         tg.ready(); tg.expand();
 
-        // A. FETCH DATA & POPULATE
-        fetch(`${N8N_HOST}/get-sku-list`)
-            .then(res => res.json())
-            .then(data => {
+        // 1. FETCH DATA (Dengan Error Handling Robust)
+        async function initData() {
+            try {
+                // Tambahkan header untuk mencegah cache
+                const res = await fetch(`${N8N_HOST}/get-sku-list`, { 
+                    method: 'GET',
+                    headers: { 'Cache-Control': 'no-cache' }
+                });
+                
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                
+                const data = await res.json();
                 allItems = data;
-                populateCategories(data);
-                populateDatalist(data); // Awal: tampilkan semua
-            })
-            .catch(err => console.error("Gagal load SKU:", err));
-
-        function populateCategories(data) {
-            const cats = [...new Set(data.map(i => i.category || 'UMUM'))].sort();
-            const sel = document.getElementById('category_select');
-            
-            // Hapus opsi lama kecuali default
-            while(sel.options.length > 2) sel.remove(1);
-
-            cats.forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c; opt.textContent = c.toUpperCase();
-                sel.insertBefore(opt, sel.lastElementChild); // Insert sebelum "Lainnya"
-            });
+                
+                // Populate Kategori
+                const cats = [...new Set(data.map(i => i.category || 'UMUM'))].sort();
+                const sel = document.getElementById('category_select');
+                sel.innerHTML = '<option value="">-- Pilih Kategori --</option>';
+                cats.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c; opt.textContent = c.toUpperCase();
+                    sel.appendChild(opt);
+                });
+                // Tambah opsi Lainnya
+                const otherOpt = document.createElement('option');
+                otherOpt.value = "OTHER"; otherOpt.textContent = "➕ LAINNYA (INPUT MANUAL)";
+                sel.appendChild(otherOpt);
+                
+                sel.disabled = false; // Aktifkan dropdown
+                
+            } catch (err) {
+                console.error(err);
+                document.getElementById('category_select').innerHTML = '<option>❌ Gagal Fetch (Cek Koneksi)</option>';
+                tg.showAlert(`Gagal Load Data: ${err.message}\nPastikan N8N aktif dan CORS diizinkan.`);
+            }
         }
+        initData();
 
-        function populateDatalist(items) {
-            const dl = document.getElementById('sku_list');
-            dl.innerHTML = '';
-            items.forEach(i => {
-                const opt = document.createElement('option');
-                opt.value = i.sku; // Value yang masuk input
-                opt.textContent = `${i.name} [${i.category}]`; // Label suggestion
-                dl.appendChild(opt);
-            });
-        }
-
-        // B. FILTER LOGIC
+        // 2. FILTER SKU
         window.filterSku = function(category) {
-            const customBox = document.getElementById('custom_cat_box');
             const skuInput = document.getElementById('sku_input');
+            const customBox = document.getElementById('custom_cat_box');
+            const dl = document.getElementById('sku_list');
             
-            // Handle "LAINNYA"
+            dl.innerHTML = ''; // Reset list
+
             if (category === 'OTHER') {
                 customBox.style.display = 'block';
                 document.getElementById('custom_category').required = true;
-                populateDatalist([]); // Kosongkan suggestion agar fokus input manual
+                skuInput.placeholder = "Ketik Nama Barang Baru...";
             } else {
                 customBox.style.display = 'none';
                 document.getElementById('custom_category').required = false;
+                skuInput.placeholder = "Pilih / Scan Barang...";
                 
-                // Filter Datalist
-                if (category === 'ALL') populateDatalist(allItems);
-                else {
-                    const filtered = allItems.filter(i => (i.category || 'UMUM') == category);
-                    populateDatalist(filtered);
-                }
+                // Isi Datalist sesuai kategori
+                const filtered = allItems.filter(i => (i.category || 'UMUM') == category);
+                filtered.forEach(i => {
+                    const opt = document.createElement('option');
+                    opt.value = i.sku;
+                    opt.textContent = `${i.name}`;
+                    dl.appendChild(opt);
+                });
             }
-            // JANGAN clear input SKU agar scan tidak hilang
         };
 
-        // C. SCANNER LOGIC (SMART)
+        // 3. SCANNER LOGIC
         let isScanning = false;
         document.getElementById('btnScan').onclick = () => {
             if(!isScanning){
@@ -170,61 +181,51 @@
         function stopScan(){ html5QrCode.stop().then(()=>{ document.getElementById('reader').style.display='none'; document.getElementById('btnScan').innerHTML='<i class="fas fa-qrcode"></i> SCAN BARCODE'; document.getElementById('btnScan').style.background='#f59e0b'; isScanning=false; }); }
 
         function handleScan(code) {
-            // 1. Isi Input
             document.getElementById('sku_input').value = code;
             
-            // 2. Cari di Database Lokal
+            // Auto Detect Kategori
             const found = allItems.find(i => i.sku === code);
-            
             if (found) {
-                // Jika ada, set kategori otomatis
-                const catSelect = document.getElementById('category_select');
-                catSelect.value = found.category || 'ALL';
-                filterSku(found.category || 'ALL'); // Refresh UI
-                tg.showAlert(`✅ Dikenali: ${found.name}`);
+                document.getElementById('category_select').value = found.category || 'UMUM';
+                filterSku(found.category || 'UMUM'); 
+                tg.HapticFeedback.notificationOccurred('success');
             } else {
-                // Jika baru, minta user pilih kategori
-                tg.showAlert(`⚠️ Item Baru: ${code}\nSilakan pilih Kategori.`);
+                tg.showAlert("Item Baru. Silakan pilih kategori manual.");
                 document.getElementById('category_select').focus();
             }
-            tg.HapticFeedback.notificationOccurred('success');
         }
 
-        // D. GPS & PHOTO
-        navigator.geolocation.getCurrentPosition(p => { lat=p.coords.latitude; lng=p.coords.longitude; document.getElementById('gps').value=`${lat.toFixed(5)},${lng.toFixed(5)}`; }, ()=>document.getElementById('gps').value="⚠️ GPS Error");
+        // 4. GPS & PHOTO
+        navigator.geolocation.getCurrentPosition(p => { lat=p.coords.latitude; lng=p.coords.longitude; document.getElementById('gps').value=`${lat.toFixed(5)}, ${lng.toFixed(5)}`; }, ()=>document.getElementById('gps').value="⚠️ GPS Error");
         
         window.previewPhoto = function(input) {
             if(input.files[0]) {
-                document.getElementById('camLabel').innerHTML = `<i class="fas fa-check" style="color:#10b981"></i> OK`;
+                document.getElementById('camLabel').innerHTML = `<i class="fas fa-check" style="color:#10b981"></i> Siap Upload`;
                 document.getElementById('camWrap').classList.add('has-file');
             }
         }
 
-        // E. SUBMIT HANDLER
+        // 5. SUBMIT
         document.getElementById('patihForm').onsubmit = async (e) => {
             e.preventDefault();
             const btn = document.getElementById('btnSubmit');
             const sku = document.getElementById('sku_input').value;
             let cat = document.getElementById('category_select').value;
             
-            // Ambil custom category jika dipilih
-            if (cat === 'OTHER') {
-                cat = document.getElementById('custom_category').value.toUpperCase();
-            }
-
+            if(cat === 'OTHER') cat = document.getElementById('custom_category').value.toUpperCase();
+            if(!cat) return tg.showAlert("Pilih Kategori Dulu!");
             if(!sku) return tg.showAlert("SKU Wajib Diisi!");
-            
+
             btn.disabled=true; btn.innerHTML='MENGIRIM...';
             
             const fd = new FormData();
-            fd.append('sku', sku);
-            fd.append('category', cat); // Kirim kategori final
+            fd.append('sku', sku); fd.append('category', cat);
             fd.append('act', document.getElementById('act').value);
             fd.append('qty', document.getElementById('qty').value);
             fd.append('note', document.getElementById('note').value);
             fd.append('lat', lat||''); fd.append('lng', lng||'');
-            
             if(document.getElementById('photo').files[0]) fd.append('photo', document.getElementById('photo').files[0]);
+            
             if(tg.initDataUnsafe?.user) {
                 fd.append('chat_id', tg.initDataUnsafe.user.id);
                 fd.append('username', tg.initDataUnsafe.user.first_name);
@@ -237,12 +238,11 @@
                     document.getElementById('statusBox').innerHTML = json.message;
                     document.getElementById('statusBox').className = "status-msg success";
                     document.getElementById('statusBox').style.display = 'block';
-                    setTimeout(()=>tg.close(), 2000);
-                } else throw new Error(json.message);
+                    tg.HapticFeedback.notificationOccurred('success');
+                    setTimeout(()=>tg.close(), 2500);
+                } else throw new Error(json.message || "Server Error");
             } catch(e) {
-                document.getElementById('statusBox').innerHTML = "Gagal: "+e.message;
-                document.getElementById('statusBox').className = "status-msg error";
-                document.getElementById('statusBox').style.display = 'block';
+                tg.showAlert("Gagal: "+e.message);
                 btn.disabled=false; btn.innerHTML='KIRIM DATA';
             }
         };
