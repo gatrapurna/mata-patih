@@ -8,11 +8,10 @@
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* --- HIVE DARK THEME V4 (UX FOCUSED) --- */
-        :root { --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --text-muted: #94a3b8; --accent: #3b82f6; --success: #10b981; --warning: #f59e0b; --border: #334155; }
+        /* --- HIVE DARK THEME V5 (GEO + PHOTO) --- */
+        :root { --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --text-muted: #94a3b8; --accent: #3b82f6; --success: #10b981; --warning: #f59e0b; --danger: #ef4444; --border: #334155; }
         body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; }
 
-        /* HEADER */
         .brand-header { text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border); }
         .brand-header h2 { margin: 0; color: var(--accent); font-weight: 800; letter-spacing: 1px; font-size: 1.6rem; }
         .brand-header p { margin: 5px 0 0; font-size: 0.8rem; color: var(--text-muted); }
@@ -23,24 +22,31 @@
         label { display: block; margin-bottom: 6px; color: var(--text-muted); font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
         
         select, input, textarea { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: #0f172a; color: white; font-size: 1rem; box-sizing: border-box; margin-bottom: 15px; transition: border 0.2s; }
-        select:focus, input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
-        select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; background: #1e293b; }
+        select:focus, input:focus, textarea:focus { outline: none; border-color: var(--accent); }
 
-        /* BUTTON GROUP */
         .btn-group { display: flex; gap: 10px; margin-bottom: 20px; }
         .btn-act { flex: 1; padding: 12px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); border-radius: 8px; cursor: pointer; transition: all 0.2s; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-act.active { background: var(--accent); color: white; border-color: var(--accent); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
-        .btn-act.out.active { background: #ef4444; border-color: #ef4444; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
+        .btn-act.out.active { background: var(--danger); border-color: var(--danger); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
+
+        /* UPLOAD PHOTO STYLE */
+        .file-upload { position: relative; display: block; margin-bottom: 15px; }
+        .file-upload input { display: none; }
+        .file-upload-label { display: flex; align-items: center; justify-content: center; padding: 12px; background: #0f172a; border: 2px dashed var(--border); border-radius: 8px; cursor: pointer; color: var(--text-muted); gap: 10px; transition: 0.3s; }
+        .file-upload-label:hover { border-color: var(--accent); color: var(--accent); }
+        .file-upload-label.has-file { border-color: var(--success); color: var(--success); background: rgba(16, 185, 129, 0.1); }
 
         .main-btn { width: 100%; padding: 14px; background: var(--success); color: white; border: none; border-radius: 10px; font-size: 1rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
-        .main-btn:active { transform: scale(0.98); }
-        .main-btn:disabled { background: var(--border); cursor: not-allowed; opacity: 0.7; box-shadow: none; }
+        .main-btn:disabled { background: var(--border); cursor: not-allowed; opacity: 0.7; }
 
-        .status-msg { display: none; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; font-size: 0.9rem; line-height: 1.4; }
-        .status-msg.success { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-        .status-msg.error { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
-        
         #qr-reader { border-radius: 10px; overflow: hidden; margin-bottom: 15px; border: 2px dashed var(--accent); display: none; }
+        
+        .geo-badge { display: inline-block; padding: 4px 8px; background: #334155; color: #cbd5e1; border-radius: 4px; font-size: 0.75rem; margin-bottom: 10px; }
+        .geo-badge.active { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; }
+
+        .status-msg { display: none; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; font-size: 0.9rem; }
+        .status-msg.error { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
+        .status-msg.success { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; }
     </style>
 </head>
 <body>
@@ -56,7 +62,9 @@
             <button class="btn-act out" onclick="setAct('OUT')"><i class="fas fa-arrow-up"></i> Keluar</button>
             <button class="btn-act" onclick="toggleScan()"><i class="fas fa-qrcode"></i> Scan</button>
         </div>
+        
         <div id="qr-reader"></div>
+        <div id="geoStatus" class="geo-badge"><i class="fas fa-satellite-dish"></i> Menunggu GPS...</div>
 
         <label>1. Kategori Barang</label>
         <select id="catSelect" onchange="filterSKU()">
@@ -71,27 +79,31 @@
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             <div>
-                <label>Brand / Merk</label>
-                <input type="text" id="brand" placeholder="Merk...">
+                <label>Merk</label>
+                <input type="text" id="brand" placeholder="-">
             </div>
             <div>
-                <label>Jumlah (Qty)</label>
+                <label>Qty</label>
                 <input type="number" id="qty" placeholder="0" min="1" inputmode="numeric">
             </div>
         </div>
 
-        <label>Lokasi Penyimpanan</label>
-        <input type="text" id="location" placeholder="Contoh: Rak A1, Gudang Utama..." list="locList">
+        <label>Lokasi / Unit</label>
+        <input type="text" id="location" placeholder="Cth: Gudang A, ODP-JOG-01..." list="locList">
         <datalist id="locList">
-            <option value="Gudang Pusat">
-            <option value="Mobil Teknisi 1">
-            <option value="Mobil Teknisi 2">
-            <option value="Rak Kabel">
-            <option value="Rak Modem">
+            <option value="Gudang Pusat"><option value="Mobil Teknisi 1"><option value="Rak Kabel"><option value="ODP-XXX">
         </datalist>
 
-        <label>Catatan Tambahan (Opsional)</label>
-        <textarea id="notes" rows="1" placeholder="Keterangan..."></textarea>
+        <label>Dokumentasi (Wajib utk Keluar)</label>
+        <div class="file-upload">
+            <label for="fileInput" class="file-upload-label" id="fileLabel">
+                <i class="fas fa-camera"></i> Ambil Foto / Upload
+            </label>
+            <input type="file" id="fileInput" accept="image/*" capture="environment" onchange="handleFile(this)">
+        </div>
+
+        <label>Catatan</label>
+        <textarea id="notes" rows="1" placeholder="Keterangan tambahan..."></textarea>
 
         <button id="submitBtn" class="main-btn" onclick="kirimData()">
             <i class="fas fa-paper-plane"></i> KIRIM LAPORAN
@@ -107,83 +119,83 @@
 
         let currentAct = 'IN';
         let html5QrcodeScanner = null;
-        let masterData = []; // Menyimpan semua data mentah dari server
+        let masterData = [];
+        let userLocation = { lat: '', long: '' };
 
-        // --- 1. DATA LOADING & LOGIC ---
-        async function initData() {
-            const catSel = document.getElementById('catSelect');
-            const skuSel = document.getElementById('skuSelect');
-            
-            catSel.innerHTML = '<option value="" disabled selected>⏳ Mengambil Data Hive...</option>';
-            skuSel.innerHTML = '<option value="" disabled selected>-- Pilih Kategori Dulu --</option>';
-            skuSel.disabled = true;
-
-            try {
-                // Fetch Data V3
-                const res = await fetch(`${N8N_HOST}/patih-v3/sku?t=${Date.now()}`);
-                const json = await res.json();
-                
-                // Cek format data (aman untuk array langsung atau object wrapper)
-                masterData = Array.isArray(json) ? json : (json.data || []);
-                
-                if(masterData.length === 0) throw new Error("Data Kosong");
-
-                // Ekstrak Kategori Unik
-                const categories = [...new Set(masterData.map(item => item.category || "UMUM"))].sort();
-                
-                // Isi Dropdown Kategori
-                catSel.innerHTML = '<option value="" disabled selected>-- Pilih Kategori --</option>';
-                catSel.innerHTML += `<option value="ALL">📂 TAMPILKAN SEMUA</option>`; // Opsi All
-                categories.forEach(cat => {
-                    catSel.innerHTML += `<option value="${cat}">${cat}</option>`;
-                });
-
-            } catch (e) {
-                console.error(e);
-                catSel.innerHTML = '<option disabled>⚠️ Gagal Koneksi</option>';
-                document.getElementById('statusBox').textContent = "Error: " + e.message;
-                document.getElementById('statusBox').className = "status-msg error";
-                document.getElementById('statusBox').style.display = "block";
+        // --- 1. GEOLOCATION ---
+        function getGeo() {
+            const geoBox = document.getElementById('geoStatus');
+            if ("geolocation" in navigator) {
+                geoBox.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mencari Lokasi...';
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        userLocation.lat = pos.coords.latitude;
+                        userLocation.long = pos.coords.longitude;
+                        geoBox.innerHTML = `<i class="fas fa-map-marker-alt"></i> GPS Terkunci: ${userLocation.lat.toFixed(4)}, ${userLocation.long.toFixed(4)}`;
+                        geoBox.className = "geo-badge active";
+                    },
+                    (err) => {
+                        geoBox.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Gagal GPS: ${err.message}`;
+                        geoBox.style.color = "#ef4444";
+                    },
+                    { enableHighAccuracy: true, timeout: 5000 }
+                );
+            } else {
+                geoBox.innerHTML = "Browser tidak dukung GPS";
             }
         }
 
-        // --- 2. FILTERING LOGIC ---
+        // --- 2. DATA LOADING ---
+        async function initData() {
+            getGeo(); // Start GPS search
+            const catSel = document.getElementById('catSelect');
+            catSel.innerHTML = '<option value="" disabled selected>⏳ Mengambil Data...</option>';
+            
+            try {
+                const res = await fetch(`${N8N_HOST}/patih-v3/sku?t=${Date.now()}`);
+                const json = await res.json();
+                masterData = Array.isArray(json) ? json : (json.data || []);
+                
+                if(masterData.length === 0) throw new Error("Data Kosong");
+                
+                // Populate Category
+                const categories = [...new Set(masterData.map(item => item.category || "UMUM"))].sort();
+                catSel.innerHTML = '<option value="" disabled selected>-- Pilih Kategori --</option>';
+                catSel.innerHTML += `<option value="ALL">📂 SEMUA BARANG</option>`;
+                categories.forEach(cat => catSel.innerHTML += `<option value="${cat}">${cat}</option>`);
+
+            } catch (e) {
+                catSel.innerHTML = '<option disabled>⚠️ Gagal Koneksi</option>';
+                alert("Gagal load data: " + e.message);
+            }
+        }
+
+        // --- 3. FILTERING & AUTOFILL ---
         function filterSKU() {
             const selectedCat = document.getElementById('catSelect').value;
             const skuSel = document.getElementById('skuSelect');
-            
-            // Kosongkan SKU
             skuSel.innerHTML = '<option value="" disabled selected>-- Pilih Barang --</option>';
             
-            // Filter Data
-            const filtered = (selectedCat === 'ALL') 
-                ? masterData 
-                : masterData.filter(item => (item.category || "UMUM") === selectedCat);
-
-            // Isi Dropdown SKU
+            const filtered = (selectedCat === 'ALL') ? masterData : masterData.filter(i => (i.category || "UMUM") === selectedCat);
+            
             filtered.forEach(item => {
                 const opt = document.createElement('option');
                 opt.value = item.sku; 
-                opt.text = `${item.name} (Sisa: ${item.stock})`;
-                opt.dataset.brand = item.brand || "";     // Simpan brand di atribut
-                opt.dataset.loc = item.location || "";    // Simpan lokasi di atribut
+                opt.text = `${item.name} (Stok: ${item.stock})`;
+                opt.dataset.brand = item.brand || "";
+                opt.dataset.loc = item.location || "";
                 skuSel.appendChild(opt);
             });
-
             skuSel.disabled = false;
         }
 
-        // --- 3. AUTO FILL DETAIL ---
         function fillDetails() {
-            const skuSel = document.getElementById('skuSelect');
-            const selectedOpt = skuSel.options[skuSel.selectedIndex];
-            
-            // Auto-fill jika data ada di database
-            if(selectedOpt.dataset.brand) document.getElementById('brand').value = selectedOpt.dataset.brand;
-            if(selectedOpt.dataset.loc) document.getElementById('location').value = selectedOpt.dataset.loc;
+            const opt = document.getElementById('skuSelect').options[document.getElementById('skuSelect').selectedIndex];
+            if(opt.dataset.brand) document.getElementById('brand').value = opt.dataset.brand;
+            if(opt.dataset.loc) document.getElementById('location').value = opt.dataset.loc;
         }
 
-        // --- 4. SCANNER LOGIC (SMART) ---
+        // --- 4. SCANNER (IMPROVED) ---
         function toggleScan() {
             const reader = document.getElementById('qr-reader');
             if (reader.style.display === 'block') {
@@ -191,57 +203,72 @@
                 reader.style.display = 'none';
             } else {
                 reader.style.display = 'block';
-                html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 250 });
+                // Gunakan back camera (environment)
+                html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 250, videoConstraints: { facingMode: "environment" } });
                 html5QrcodeScanner.render((decodedText) => {
-                    // 1. Cari barang di Master Data
                     const item = masterData.find(i => i.sku === decodedText || i.name.toLowerCase().includes(decodedText.toLowerCase()));
-                    
                     if(item) {
-                        // 2. Set Kategori Otomatis
-                        const cat = item.category || "UMUM";
-                        document.getElementById('catSelect').value = cat; 
-                        filterSKU(); // Refresh SKU list sesuai kategori
-                        
-                        // 3. Set SKU Otomatis
+                        document.getElementById('catSelect').value = item.category || "UMUM"; 
+                        filterSKU();
                         document.getElementById('skuSelect').value = item.sku;
                         fillDetails();
-
                         tg.HapticFeedback.impactOccurred('medium');
-                        alert(`Ditemukan: ${item.name}`);
-                        
-                        // Stop Scan
+                        alert(`Scan Sukses: ${item.name}`);
                         html5QrcodeScanner.clear();
                         reader.style.display = 'none';
                     } else {
-                        alert(`Barang tidak ditemukan: ${decodedText}`);
+                        alert(`Barang tidak dikenal: ${decodedText}`);
                     }
                 });
             }
         }
 
-        // --- 5. SUBMIT LOGIC ---
+        // --- 5. PHOTO HANDLER ---
+        function handleFile(input) {
+            const label = document.getElementById('fileLabel');
+            if (input.files && input.files[0]) {
+                label.innerHTML = `<i class="fas fa-check"></i> Foto Siap (${input.files[0].name.substring(0,10)}...)`;
+                label.className = "file-upload-label has-file";
+            } else {
+                label.innerHTML = `<i class="fas fa-camera"></i> Ambil Foto / Upload`;
+                label.className = "file-upload-label";
+            }
+        }
+
+        // --- 6. SUBMIT (MULTIPART FORM) ---
         async function kirimData() {
             const sku = document.getElementById('skuSelect').value;
             const qty = document.getElementById('qty').value;
-            const brand = document.getElementById('brand').value;
-            const location = document.getElementById('location').value;
-            const notes = document.getElementById('notes').value;
+            const fileInput = document.getElementById('fileInput');
+
+            if(!sku || !qty) { tg.showAlert("Lengkapi data barang!"); return; }
             
-            if(!sku || !qty) { tg.showAlert("Pilih barang dan isi jumlah!"); return; }
+            // Validasi Foto untuk Barang Keluar
+            if(currentAct === 'OUT' && (!fileInput.files || fileInput.files.length === 0)) {
+                tg.showAlert("⚠️ WAJIB upload foto bukti untuk barang keluar!");
+                return;
+            }
 
             const btn = document.getElementById('submitBtn');
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengirim...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
             
             const fd = new FormData();
             fd.append('act', currentAct);
             fd.append('sku', sku);
             fd.append('qty', qty);
-            fd.append('brand', brand);
-            fd.append('location', location);
-            fd.append('notes', notes);
+            fd.append('brand', document.getElementById('brand').value);
+            fd.append('location', document.getElementById('location').value);
+            fd.append('notes', document.getElementById('notes').value);
+            fd.append('lat', userLocation.lat);
+            fd.append('long', userLocation.long);
             
-            // User ID Logic
+            // Append Foto jika ada
+            if(fileInput.files[0]) {
+                fd.append('evidence', fileInput.files[0]);
+            }
+
+            // User ID
             if(tg.initDataUnsafe?.user) {
                 fd.append('chat_id', tg.initDataUnsafe.user.id);
                 fd.append('username', tg.initDataUnsafe.user.first_name);
@@ -251,23 +278,19 @@
             }
 
             try {
+                // POST Request
                 const res = await fetch(`${N8N_HOST}/patih-v3/brain`, { method:'POST', body:fd });
                 const json = await res.json();
                 
                 if(json.status === 'success' || json.reply_text){
-                    const msg = json.reply_text || "✅ Sukses!";
-                    document.getElementById('statusBox').innerHTML = msg.replace(/\n/g, "<br>");
+                    document.getElementById('statusBox').innerHTML = (json.reply_text || "✅ Sukses!").replace(/\n/g, "<br>");
                     document.getElementById('statusBox').className = "status-msg success";
                     document.getElementById('statusBox').style.display = "block";
                     tg.HapticFeedback.notificationOccurred('success');
-                    
-                    // Reset Partial
-                    document.getElementById('qty').value = '';
-                    
                     setTimeout(() => tg.close(), 2500);
-                } else throw new Error("Gagal");
+                } else throw new Error("Gagal menyimpan");
             } catch(e) {
-                document.getElementById('statusBox').textContent = "Gagal Kirim: " + e.message;
+                document.getElementById('statusBox').textContent = "Error: " + e.message;
                 document.getElementById('statusBox').className = "status-msg error";
                 document.getElementById('statusBox').style.display = "block";
                 btn.disabled = false;
@@ -285,7 +308,6 @@
             btn.style.background = act === 'IN' ? 'var(--success)' : '#ef4444';
         }
 
-        // Init
         document.addEventListener("DOMContentLoaded", initData);
     </script>
 </body>
