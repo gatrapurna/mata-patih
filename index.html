@@ -8,13 +8,15 @@
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* --- HIVE DARK THEME V3 --- */
-        :root { --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --text-muted: #94a3b8; --accent: #3b82f6; --success: #10b981; --border: #334155; }
+        /* --- HIVE DARK THEME V4 (BRANDED) --- */
+        :root { --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --text-muted: #94a3b8; --accent: #3b82f6; --success: #10b981; --warning: #f59e0b; --border: #334155; }
         body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; }
-        
-        .header { text-align: center; margin-bottom: 20px; }
-        .header h2 { margin: 0; color: var(--accent); font-size: 1.5rem; }
-        .header p { margin: 5px 0 0; color: var(--text-muted); font-size: 0.9rem; }
+
+        /* BRANDING HEADER */
+        .brand-header { text-align: center; margin-bottom: 25px; padding-top: 10px; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
+        .brand-header h2 { margin: 0; color: var(--accent); font-weight: 800; letter-spacing: 1px; font-size: 1.8rem; text-transform: uppercase; }
+        .brand-header p { margin: 4px 0 0; font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+        .brand-tag { color: var(--warning); font-size: 0.75rem; font-weight: bold; display: block; margin-top: 2px; letter-spacing: 0.5px; }
 
         .card { background: var(--card); border-radius: 12px; padding: 15px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 15px; }
         
@@ -34,7 +36,6 @@
         .status-msg { display: none; padding: 12px; border-radius: 8px; text-align: center; margin-top: 15px; font-size: 0.9rem; }
         .status-msg.success { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; }
         .status-msg.error { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
-        .status-msg.loading { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid #3b82f6; }
         
         /* QR SCANNER */
         #qr-reader { border-radius: 10px; overflow: hidden; margin-bottom: 15px; border: 2px dashed var(--border); display: none; }
@@ -42,11 +43,11 @@
 </head>
 <body>
 
-    <div style="text-align: center; margin-bottom: 20px; padding-top: 5px;">
-        <h2 style="margin:0; color: var(--accent); font-weight: 800; letter-spacing: 1px;">P.A.T.I.H</h2>
-        <p style="margin:4px 0 0; font-size: 0.8rem; color: #94a3b8; font-weight: 500;">
+    <div class="brand-header">
+        <h2>P.A.T.I.H</h2>
+        <p>
             Platform Aset & Tracking<br>
-            <span style="color: var(--warning); font-size: 0.75rem;">⚡ INTELLIGENT HIVE</span>
+            <span class="brand-tag">⚡ INTELLIGENT HIVE</span>
         </p>
     </div>
 
@@ -57,18 +58,20 @@
             <button class="btn-act out" onclick="setAct('OUT')"><i class="fas fa-arrow-up"></i> Keluar</button>
             <button class="btn-act" onclick="toggleScan()"><i class="fas fa-qrcode"></i> Scan</button>
         </div>
+        
         <div id="qr-reader"></div>
 
-        <label>Nama Barang / SKU</label>
+        <label>Pilih Barang / SKU</label>
         <select id="skuSelect">
-            <option value="" disabled selected>⏳ Memuat Data Stok...</option>
+            <option value="" disabled selected>⏳ Menghubungkan ke Hive...</option>
         </select>
+        <small id="refreshBtn" style="color: var(--accent); cursor: pointer; float: right; margin-top: -10px; margin-bottom: 10px;" onclick="loadData()">🔄 Refresh Data</small>
 
         <label>Jumlah (Qty)</label>
         <input type="number" id="qty" placeholder="0" min="1" inputmode="numeric">
 
-        <label>Keterangan / Lokasi</label>
-        <textarea id="notes" rows="2" placeholder="Contoh: Ambil dari Gudang A..."></textarea>
+        <label>Catatan / Lokasi</label>
+        <textarea id="notes" rows="2" placeholder="Keterangan tambahan..."></textarea>
 
         <button id="submitBtn" class="main-btn" onclick="kirimData()">
             <i class="fas fa-paper-plane"></i> KIRIM LAPORAN
@@ -80,37 +83,54 @@
     <script>
         // --- CONFIGURATION ---
         const tg = window.Telegram.WebApp;
-        tg.expand(); // Fullscreen Mode
+        tg.expand(); 
 
-        // Ganti dengan Domain n8n Anda (Tanpa slash di akhir)
+        // PASTE URL N8N ANDA DISINI (TANPA SLASH DI AKHIR)
+        // CONTOH: https://n8ring.gatrapurna.my.id/webhook
         const N8N_HOST = "https://n8ring.gatrapurna.my.id/webhook"; 
         
         let currentAct = 'IN';
         let html5QrcodeScanner = null;
 
-        // 1. LOAD DATA BARANG SAAT INIT
-        document.addEventListener("DOMContentLoaded", async () => {
+        // 1. LOAD DATA BARANG
+        async function loadData() {
+            const sel = document.getElementById('skuSelect');
+            sel.innerHTML = '<option value="" disabled selected>⏳ Sedang mengambil data...</option>';
+            
             try {
-                // Fetch ke Endpoint V3 Baru
-                const res = await fetch(`${N8N_HOST}/patih-v3/sku`);
-                if(!res.ok) throw new Error("Gagal ambil data");
+                // Fetch ke Endpoint V3 SKU
+                // Tambahkan Timestamp agar tidak di-cache browser
+                const res = await fetch(`${N8N_HOST}/patih-v3/sku?t=${new Date().getTime()}`);
+                
+                if(!res.ok) throw new Error(`HTTP Error: ${res.status}`);
                 
                 const data = await res.json();
-                const sel = document.getElementById('skuSelect');
-                sel.innerHTML = '<option value="" disabled selected>-- Pilih Barang --</option>';
                 
-                // Grouping by Category (Opsional jika API support)
+                if(data.length === 0) {
+                    sel.innerHTML = '<option value="" disabled>⚠️ Data Stok Kosong</option>';
+                    return;
+                }
+
+                sel.innerHTML = '<option value="" disabled selected>-- Pilih Barang --</option>';
                 data.forEach(item => {
                     const opt = document.createElement('option');
-                    opt.value = item.sku || item.name; // Fallback
+                    // Pastikan value tidak null
+                    opt.value = item.sku || item.name || "UNKNOWN";
                     opt.text = `${item.name} (Stok: ${item.stock})`;
                     sel.appendChild(opt);
                 });
+
             } catch (e) {
-                document.getElementById('skuSelect').innerHTML = '<option>⚠️ Gagal memuat data (Cek Koneksi)</option>';
                 console.error(e);
+                sel.innerHTML = '<option disabled>⚠️ Gagal Koneksi (Tap Refresh)</option>';
+                document.getElementById('statusBox').innerHTML = "Koneksi ke Hive Gagal: " + e.message;
+                document.getElementById('statusBox').className = "status-msg error";
+                document.getElementById('statusBox').style.display = "block";
             }
-        });
+        }
+
+        // Panggil saat load
+        document.addEventListener("DOMContentLoaded", loadData);
 
         // 2. INTERACTION LOGIC
         function setAct(act) {
@@ -134,24 +154,30 @@
                 reader.style.display = 'block';
                 html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 250 });
                 html5QrcodeScanner.render((decodedText) => {
-                    // Auto Select jika QR cocok dengan Value Option
                     const sel = document.getElementById('skuSelect');
+                    let found = false;
                     for(let i=0; i<sel.options.length; i++) {
-                        if(sel.options[i].value === decodedText || sel.options[i].text.includes(decodedText)) {
+                        // Cek kemiripan teks atau value persis
+                        if(sel.options[i].value === decodedText || sel.options[i].text.toLowerCase().includes(decodedText.toLowerCase())) {
                             sel.selectedIndex = i;
-                            tg.HapticFeedback.impactOccurred('medium');
-                            alert(`QR Terdeteksi: ${decodedText}`);
-                            html5QrcodeScanner.clear();
-                            reader.style.display = 'none';
-                            return;
+                            found = true;
+                            break;
                         }
                     }
-                    alert(`Barang tidak ditemukan di sistem: ${decodedText}`);
+                    
+                    if(found) {
+                        tg.HapticFeedback.impactOccurred('medium');
+                        alert(`Item Terdeteksi: ${decodedText}`);
+                        html5QrcodeScanner.clear();
+                        reader.style.display = 'none';
+                    } else {
+                        alert(`Barang tidak ada di list sistem: ${decodedText}`);
+                    }
                 });
             }
         }
 
-        // 4. SUBMIT LOGIC (KIRIM KE N8N V3)
+        // 4. SUBMIT LOGIC
         window.kirimData = async () => {
             const sku = document.getElementById('skuSelect').value;
             const qty = document.getElementById('qty').value;
@@ -164,57 +190,51 @@
             }
 
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengirim...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengirim ke Hive...';
             document.getElementById('statusBox').style.display = 'none';
 
-            // Siapkan Data
             const fd = new FormData();
             fd.append('act', currentAct);
             fd.append('sku', sku);
             fd.append('qty', qty);
             fd.append('notes', notes);
             
-            // Data User Telegram (Jika dibuka via TG)
             if(tg.initDataUnsafe?.user) {
                 fd.append('chat_id', tg.initDataUnsafe.user.id);
                 fd.append('username', tg.initDataUnsafe.user.first_name);
             } else {
-                // Fallback untuk Testing di Browser
-                fd.append('chat_id', 'TEST_BROWSER');
-                fd.append('username', 'WebAdmin');
+                fd.append('chat_id', 'WEB_TEST');
+                fd.append('username', 'BrowserAdmin');
             }
 
             try {
-                // KIRIM KE ENDPOINT V3 (/brain)
+                // Fetch ke Endpoint V3 Brain
                 const res = await fetch(`${N8N_HOST}/patih-v3/brain`, { method:'POST', body:fd });
                 const json = await res.json();
                 
                 if(json.status === 'success' || json.reply_text){
-                    const msg = json.reply_text || "✅ Data Berhasil Disimpan!";
+                    const msg = json.reply_text || "✅ Transaksi Berhasil Dicatat!";
                     
-                    document.getElementById('statusBox').innerHTML = msg;
+                    document.getElementById('statusBox').innerHTML = msg.replace(/\n/g, "<br>"); // Convert newline to br
                     document.getElementById('statusBox').className = "status-msg success";
                     document.getElementById('statusBox').style.display = "block";
                     tg.HapticFeedback.notificationOccurred('success');
                     
-                    // Reset Form
                     document.getElementById('qty').value = '';
                     document.getElementById('notes').value = '';
                     
-                    // Tutup otomatis setelah 3 detik
-                    setTimeout(() => tg.close(), 3000);
+                    setTimeout(() => tg.close(), 2500);
                 } else {
-                    throw new Error("Respon server aneh.");
+                    throw new Error("Respon server tidak valid.");
                 }
             } catch(e) {
-                document.getElementById('statusBox').innerHTML = "Gagal: " + e.message;
+                document.getElementById('statusBox').innerHTML = "Gagal Kirim: " + e.message;
                 document.getElementById('statusBox').className = "status-msg error";
                 document.getElementById('statusBox').style.display = "block";
                 btn.disabled = false;
-                setAct(currentAct); // Reset tombol
+                setAct(currentAct); 
             }
         };
     </script>
 </body>
 </html>
-
