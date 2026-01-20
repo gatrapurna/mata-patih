@@ -145,28 +145,40 @@
             }
         }
 
-        // --- 2. DATA LOADING ---
+        // --- 2. DATA LOADING (UPDATED V2) ---
         async function initData() {
-            getGeo(); // Start GPS search
+            getGeo(); // Start GPS
             const catSel = document.getElementById('catSelect');
             catSel.innerHTML = '<option value="" disabled selected>⏳ Mengambil Data...</option>';
             
             try {
-                const res = await fetch(`${N8N_HOST}/patih-v3/sku?t=${Date.now()}`);
-                const json = await res.json();
-                masterData = Array.isArray(json) ? json : (json.data || []);
+                // Tambahkan mode cors explicit
+                const res = await fetch(`${N8N_HOST}/patih-v3/sku?t=${Date.now()}`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
                 
-                if(masterData.length === 0) throw new Error("Data Kosong");
+                if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+                
+                const json = await res.json();
+                // Handle berbagai kemungkinan bentuk response n8n
+                masterData = Array.isArray(json) ? json : (json.data || json.result || []);
+                
+                if(masterData.length === 0) throw new Error("Database Kosong");
                 
                 // Populate Category
-                const categories = [...new Set(masterData.map(item => item.category || "UMUM"))].sort();
+                const rawCats = masterData.map(item => item.category ? item.category.toUpperCase() : "UMUM");
+                const categories = [...new Set(rawCats)].sort();
+                
                 catSel.innerHTML = '<option value="" disabled selected>-- Pilih Kategori --</option>';
                 catSel.innerHTML += `<option value="ALL">📂 SEMUA BARANG</option>`;
                 categories.forEach(cat => catSel.innerHTML += `<option value="${cat}">${cat}</option>`);
 
             } catch (e) {
-                catSel.innerHTML = '<option disabled>⚠️ Gagal Koneksi</option>';
-                alert("Gagal load data: " + e.message);
+                console.error(e);
+                catSel.innerHTML = '<option disabled>⚠️ Gagal: ' + e.message + '</option>';
+                // Retry button kecil
+                document.getElementById('refreshBtn').innerHTML = "❌ Retry";
             }
         }
 
@@ -312,3 +324,4 @@
     </script>
 </body>
 </html>
+
